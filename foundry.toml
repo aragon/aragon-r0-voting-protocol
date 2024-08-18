@@ -4,5 +4,7 @@ out = "out"
 libs = ["../../lib", "../../contracts/src"]
 test = "tests"
 ffi = true
+fs_permissions = [{ access = "read", path = "./script/" }]
+
 
 # See more config options https://github.com/foundry-rs/foundry/tree/master/config

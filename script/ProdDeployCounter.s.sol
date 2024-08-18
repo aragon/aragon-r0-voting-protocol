@@ -1,4 +1,3 @@
-// Copyright 2024 RISC Zero, Inc.
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -30,23 +29,25 @@ import {ERC20} from "../contracts/ERC20.sol";
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract CounterrDeploy is Script {
+contract CounterDeploy is Script {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
 
         vm.startBroadcast(deployerKey);
 
-        ERC20 toyken = new ERC20("TOYKEN", "TOY", 0);
-        console2.log("Deployed ERC20 TOYKEN to", address(toyken));
-
-        IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
-            ControlID.CONTROL_ROOT,
-            ControlID.BN254_CONTROL_ID
+        IRiscZeroVerifier verifier = IRiscZeroVerifier(
+            0x925d8331ddc0a1F0d96E68CF073DFE1d92b69187
         );
-        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
+        string memory config = vm.readFile(
+            "./script/RiscVotingProtocolConfig.txt"
+        );
 
-        string memory config = vm.readFile("RiscVotingProtocolConfig.txt");
-        Counter counter = new Counter(verifier, address(toyken), config);
+        console2.logBytes(abi.encode(config));
+        Counter counter = new Counter(
+            verifier,
+            address(0x185Bb1cca668C474214e934028A3e4BB7A5E6525),
+            config
+        );
         console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();

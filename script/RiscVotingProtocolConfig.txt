@@ -1,0 +1,1 @@
+{ "votingProtocolVersion": "1", "assets": [ { "token": "0x185Bb1cca668C474214e934028A3e4BB7A5E6525", "chainId": 11155111, "votingPowerStrategy": "BalanceOf", "delegationStrategy": "DelegationContract", "restaking": [ ] } ] }

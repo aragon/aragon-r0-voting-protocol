@@ -16,6 +16,7 @@
 
 pragma solidity ^0.8.20;
 
+import {RiscVotingProtocolConfig} from "./RiscVotingProtocolConfig.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
 import {ICounter} from "./ICounter.sol";
@@ -25,7 +26,7 @@ import {ImageID} from "./ImageID.sol"; // auto-generated contract after running 
 /// @notice Implements a counter that increments based on off-chain Steel proofs submitted to this contract.
 /// @dev The contract interacts with ERC-20 tokens, using Steel proofs to verify that an account holds at least 1 token
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
-contract Counter is ICounter {
+contract Counter is ICounter, RiscVotingProtocolConfig {
     /// @notice Image ID of the only zkVM binary to accept verification from.
     bytes32 public constant imageId = ImageID.BALANCE_OF_ID;
 
@@ -45,7 +46,11 @@ contract Counter is ICounter {
     }
 
     /// @notice Initialize the contract, binding it to a specified RISC Zero verifier and ERC-20 token address.
-    constructor(IRiscZeroVerifier _verifier, address _tokenAddress) {
+    constructor(
+        IRiscZeroVerifier _verifier,
+        address _tokenAddress,
+        string memory _config
+    ) RiscVotingProtocolConfig(_config) {
         verifier = _verifier;
         tokenAddress = _tokenAddress;
         counter = 0;

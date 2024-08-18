@@ -33,6 +33,9 @@ sol! {
     interface IERC20 {
         function balanceOf(address account) external view returns (uint);
     }
+    interface ConfigContract {
+        function getConfig() external view returns (string memory);
+    }
 }
 
 sol!("../contracts/ICounter.sol");
@@ -85,6 +88,12 @@ fn main() -> Result<()> {
     //  The `with_chain_spec` method is used to specify the chain configuration.
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
+    // Making the preflighs. This step is mandatory
+    let primary_call = ConfigContract::getConfigCall {};
+    let mut primary_contract = Contract::preflight(args.contract, &mut env);
+    let primary_returns = primary_contract.call_builder(&primary_call).call()?;
+    println!("Primary contract returns: {:?}", primary_returns._0);
+
     // Prepare the function call
     let call = IERC20::balanceOfCall {
         account: args.account,
@@ -105,8 +114,8 @@ fn main() -> Result<()> {
     let view_call_input = env.into_input()?;
     let env = ExecutorEnv::builder()
         .write(&view_call_input)?
-        .write(&args.token)?
         .write(&args.account)?
+        .write(&args.contract)?
         .build()?;
 
     let receipt = default_prover()

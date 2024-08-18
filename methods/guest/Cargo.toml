@@ -20,6 +20,9 @@ alloy-sol-types = { version = "0.7" }
 #risc0-steel = { path = "../../../../steel" }
 risc0-steel = { git = "https://github.com/risc0/risc0-ethereum", tag = "v1.0.0" }
 risc0-zkvm = { version = "1.0", default-features = false, features = ["std"] }
+serde_json = "1.0.125"
+serde = "1.0.208"
+
 
 [patch.crates-io]
 # use optimized risc0 circuit
