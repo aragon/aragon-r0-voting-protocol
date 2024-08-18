@@ -80,7 +80,8 @@ fn main() {
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the
     // header provided in the input.
-    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
+    let destination_chain_id = &ETH_SEPOLIA_CHAIN_SPEC;
+    let env = input.into_env().with_chain_spec(destination_chain_id);
 
     let config_call = ConfigContract::getConfigCall {};
     let config_returns = Contract::new(config_contract, &env)
@@ -95,7 +96,7 @@ fn main() {
         .assets
         .iter()
         .map(|asset| {
-            assert_eq!(asset.chain_id, env.header().number());
+            assert_eq!(asset.chain_id, destination_chain_id.chain_id());
             let asset_contract = Contract::new(asset.token, &env);
             let balance_call = IERC20::balanceOfCall { account };
             let balance = asset_contract.call_builder(&balance_call).call();

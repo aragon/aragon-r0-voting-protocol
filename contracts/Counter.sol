@@ -28,7 +28,7 @@ import {ImageID} from "./ImageID.sol"; // auto-generated contract after running 
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
 contract Counter is ICounter, RiscVotingProtocolConfig {
     /// @notice Image ID of the only zkVM binary to accept verification from.
-    bytes32 public constant imageId = ImageID.BALANCE_OF_ID;
+    bytes32 public constant imageId = ImageID.VOTING_PROTOCOL_ID;
 
     /// @notice RISC Zero verifier contract address.
     IRiscZeroVerifier public immutable verifier;

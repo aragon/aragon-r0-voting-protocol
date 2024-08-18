@@ -21,7 +21,7 @@ use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
 use apps::TxSender;
 use clap::Parser;
-use erc20_counter_methods::BALANCE_OF_ELF;
+use erc20_counter_methods::VOTING_PROTOCOL_ELF;
 use risc0_ethereum_contracts::groth16::encode;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmBlockHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
@@ -122,7 +122,7 @@ fn main() -> Result<()> {
         .prove_with_ctx(
             env,
             &VerifierContext::default(),
-            BALANCE_OF_ELF,
+            VOTING_PROTOCOL_ELF,
             &ProverOpts::groth16(),
         )?
         .receipt;

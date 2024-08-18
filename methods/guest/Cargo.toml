@@ -4,8 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [[bin]]
-name = "balance_of"
-path = "src/bin/balance_of.rs"
+name = "voting_protocol"
+path = "src/bin/voting_protocol.rs"
 
 [workspace]
 
