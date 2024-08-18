@@ -8,7 +8,7 @@ alloy-primitives = { workspace = true }
 alloy-sol-types = { workspace = true }
 anyhow = { workspace = true }
 clap = { version = "4.0", features = ["derive", "env"] }
-erc20-counter-methods = { workspace = true }
+aragon-zk-voting-protocol-methods = { workspace = true }
 ethers = { workspace = true }
 log = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }

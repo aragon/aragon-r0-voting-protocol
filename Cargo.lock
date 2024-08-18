@@ -229,8 +229,8 @@ dependencies = [
  "alloy-primitives",
  "alloy-sol-types",
  "anyhow",
+ "aragon-zk-voting-protocol-methods",
  "clap",
- "erc20-counter-methods",
  "ethers",
  "log",
  "risc0-ethereum-contracts",
@@ -238,6 +238,19 @@ dependencies = [
  "risc0-zkvm",
  "tokio",
  "tracing-subscriber 0.3.18",
+]
+
+[[package]]
+name = "aragon-zk-voting-protocol-methods"
+version = "0.1.0"
+dependencies = [
+ "alloy-primitives",
+ "alloy-sol-types",
+ "hex",
+ "risc0-build",
+ "risc0-build-ethereum",
+ "risc0-zkp",
+ "risc0-zkvm",
 ]
 
 [[package]]
@@ -1301,19 +1314,6 @@ name = "equivalent"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
-
-[[package]]
-name = "erc20-counter-methods"
-version = "0.1.0"
-dependencies = [
- "alloy-primitives",
- "alloy-sol-types",
- "hex",
- "risc0-build",
- "risc0-build-ethereum",
- "risc0-zkp",
- "risc0-zkvm",
-]
 
 [[package]]
 name = "errno"

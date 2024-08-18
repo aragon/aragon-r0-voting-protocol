@@ -3,7 +3,9 @@
 
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolValue};
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmInput, Contract, SolCommitment};
+use risc0_steel::{
+    config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmInput, Contract, EvmBlockHeader, SolCommitment,
+};
 use risc0_zkvm::guest::env;
 use serde::{Deserialize, Serialize};
 
@@ -64,8 +66,7 @@ fn main() {
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the
     // header provided in the input.
-    let destination_chain_id = &ETH_SEPOLIA_CHAIN_SPEC;
-    let env = input.into_env().with_chain_spec(destination_chain_id);
+    let env = input.into_env().with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
     let config_call = ConfigContract::getConfigCall {};
     let config_returns = Contract::new(config_contract, &env)
@@ -80,7 +81,7 @@ fn main() {
         .assets
         .iter()
         .map(|asset| {
-            assert_eq!(asset.chain_id, destination_chain_id.chain_id());
+            assert_eq!(asset.chain_id, env.header().number());
             let asset_contract = Contract::new(asset.token, &env);
             let balance_call = IERC20::balanceOfCall { account };
             let balance = asset_contract.call_builder(&balance_call).call();

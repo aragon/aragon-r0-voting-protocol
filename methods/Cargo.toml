@@ -1,5 +1,5 @@
 [package]
-name = "erc20-counter-methods"
+name = "aragon-zk-voting-protocol-methods"
 version = { workspace = true }
 edition = { workspace = true }
 

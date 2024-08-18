@@ -1,27 +1,9 @@
-// Copyright 2024 RISC Zero, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
-// This application demonstrates how to send an off-chain proof request
-// to the Bonsai proving service and publish the received proofs directly
-// to your deployed app contract.
-
 use alloy_primitives::Address;
 use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
 use apps::TxSender;
+use aragon_zk_voting_protocol_methods::VOTING_PROTOCOL_ELF;
 use clap::Parser;
-use erc20_counter_methods::VOTING_PROTOCOL_ELF;
 use risc0_ethereum_contracts::groth16::encode;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmBlockHeader};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
