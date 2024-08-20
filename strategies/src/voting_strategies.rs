@@ -1,5 +1,13 @@
+use alloy_primitives::U256;
+use risc0_steel::EvmEnv;
+
 pub trait ProtocolStrategy {
-    fn process(&self, left: u64, right: u64) -> u64;
+    fn process(
+        &self,
+        env: &EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
+        left: u64,
+        right: u64,
+    ) -> U256;
 }
 
 mod balance_of;

@@ -61,9 +61,6 @@ fn main() {
     let account: Address = env::read();
     let config_contract: Address = env::read();
 
-    let strategies_context = strategies::Context::default();
-    strategies_context.process_strategy("BalanceOf".to_string(), 1, 2);
-
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the
     // header provided in the input.
@@ -78,16 +75,21 @@ fn main() {
 
     let config = serde_json::from_str::<RiscVotingProtocolConfig>(&config_returns._0).unwrap();
 
+    let strategies_context = strategies::Context::default(env);
+
     // Get the total voting power of the account across all assets.
     let total_voting_power = config
         .assets
         .iter()
         .map(|asset| {
             assert_eq!(asset.chain_id, destination_chain_id.chain_id());
+            strategies_context.process_strategy("BalanceOf".to_string(), 1, 2)
+            /*
             let asset_contract = Contract::new(asset.token, &env);
             let balance_call = IERC20::balanceOfCall { account };
             let balance = asset_contract.call_builder(&balance_call).call();
             U256::from(balance._0)
+            */
         })
         .sum::<U256>();
 
@@ -97,7 +99,7 @@ fn main() {
 
     // Commit the block hash and number used when deriving `view_call_env` to the journal.
     let journal = Journal {
-        commitment: env.block_commitment(),
+        commitment: strategies_context.block_commitment(),
         config_contract,
     };
     env::commit_slice(&journal.abi_encode());

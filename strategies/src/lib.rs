@@ -1,15 +1,32 @@
+use alloy_primitives::U256;
+use risc0_steel::{EvmEnv, SolCommitment};
 use std::collections::HashMap;
 pub mod voting_strategies;
 use voting_strategies::*;
 
 pub struct Context {
     protocol_strategies: HashMap<String, Box<dyn ProtocolStrategy>>,
+    env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
 }
 
 impl Context {
-    pub fn new() -> Self {
+    pub fn new(env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>) -> Self {
         Self {
             protocol_strategies: HashMap::new(),
+            env,
+        }
+    }
+
+    pub fn default(
+        env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
+    ) -> Self {
+        let mut protocol_strategies: HashMap<String, Box<dyn ProtocolStrategy>> = HashMap::new();
+        protocol_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
+        protocol_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
+
+        Self {
+            protocol_strategies,
+            env,
         }
     }
 
@@ -17,35 +34,15 @@ impl Context {
         self.protocol_strategies.insert(name, protocol_strategy);
     }
 
-    pub fn process_strategy(&self, name: String, left: u64, right: u64) -> u64 {
+    pub fn process_strategy(&self, name: String, left: u64, right: u64) -> U256 {
         if let Some(protocol_strategy) = self.protocol_strategies.get(&name) {
-            protocol_strategy.process(left, right)
+            protocol_strategy.process(&self.env, left, right)
         } else {
             panic!("Strategy not found: {}", name);
         }
     }
-}
 
-impl Default for Context {
-    fn default() -> Self {
-        let mut protocol_strategies: HashMap<String, Box<dyn ProtocolStrategy>> = HashMap::new();
-        protocol_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
-        protocol_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
-
-        Self {
-            protocol_strategies,
-        }
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let context = Context::default();
-        let result = context.process_strategy("BalanceOf".to_string(), 2, 2);
-        assert_eq!(result, 4);
+    pub fn block_commitment(&self) -> SolCommitment {
+        self.env.block_commitment()
     }
 }
