@@ -1,0 +1,6 @@
+[package]
+name = "strategies"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]

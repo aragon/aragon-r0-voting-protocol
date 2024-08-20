@@ -61,6 +61,9 @@ fn main() {
     let account: Address = env::read();
     let config_contract: Address = env::read();
 
+    let strategies_context = strategies::Context::default();
+    strategies_context.process_strategy("BalanceOf".to_string(), 1, 2);
+
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
     // to specify the chain configuration. It checks that the state matches the state root in the
     // header provided in the input.
