@@ -5,7 +5,6 @@ use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolValue};
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmInput, Contract, SolCommitment};
 use risc0_zkvm::guest::env;
-use serde::{Deserialize, Serialize};
 
 risc0_zkvm::guest::entry!(main);
 
@@ -30,30 +29,6 @@ sol! {
     }
 }
 
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Restaking {
-    address: Address,
-    voting_power_strategy: String,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Asset {
-    token: Address,
-    chain_id: u64,
-    voting_power_strategy: String,
-    delegation_strategy: String,
-    restaking: Vec<Restaking>,
-}
-
-#[derive(Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct RiscVotingProtocolConfig {
-    voting_protocol_version: String,
-    assets: Vec<Asset>,
-}
-
 fn main() {
     // Read the input from the guest environment.
     println!("Reading input from the guest environment");
@@ -73,7 +48,8 @@ fn main() {
         .call();
     println!("Config Returns: {:?}", config_returns._0);
 
-    let config = serde_json::from_str::<RiscVotingProtocolConfig>(&config_returns._0).unwrap();
+    let config =
+        serde_json::from_str::<strategies::RiscVotingProtocolConfig>(&config_returns._0).unwrap();
 
     let strategies_context = strategies::Context::default(env);
 
@@ -82,14 +58,8 @@ fn main() {
         .assets
         .iter()
         .map(|asset| {
-            assert_eq!(asset.chain_id, destination_chain_id.chain_id());
-            strategies_context.process_strategy("BalanceOf".to_string(), 1, 2)
-            /*
-            let asset_contract = Contract::new(asset.token, &env);
-            let balance_call = IERC20::balanceOfCall { account };
-            let balance = asset_contract.call_builder(&balance_call).call();
-            U256::from(balance._0)
-            */
+            strategies_context.process_strategy(asset.voting_power_strategy.clone(), account, asset)
+            // assert_eq!(asset.chain_id, destination_chain_id.chain_id());
         })
         .sum::<U256>();
 

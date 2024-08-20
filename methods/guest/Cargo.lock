@@ -1838,7 +1838,10 @@ name = "strategies"
 version = "0.1.0"
 dependencies = [
  "alloy-primitives",
+ "alloy-sol-types",
  "risc0-steel",
+ "serde",
+ "serde_json",
 ]
 
 [[package]]

@@ -1,7 +1,9 @@
-use alloy_primitives::U256;
-use risc0_steel::{EvmEnv, SolCommitment};
-use std::collections::HashMap;
 pub mod voting_strategies;
+
+use alloy_primitives::{Address, U256};
+use risc0_steel::{EvmEnv, SolCommitment};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 use voting_strategies::*;
 
 pub struct Context {
@@ -34,9 +36,9 @@ impl Context {
         self.protocol_strategies.insert(name, protocol_strategy);
     }
 
-    pub fn process_strategy(&self, name: String, left: u64, right: u64) -> U256 {
+    pub fn process_strategy(&self, name: String, account: Address, asset: &Asset) -> U256 {
         if let Some(protocol_strategy) = self.protocol_strategies.get(&name) {
-            protocol_strategy.process(&self.env, left, right)
+            protocol_strategy.process(&self.env, account, asset)
         } else {
             panic!("Strategy not found: {}", name);
         }
@@ -45,4 +47,28 @@ impl Context {
     pub fn block_commitment(&self) -> SolCommitment {
         self.env.block_commitment()
     }
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Restaking {
+    pub address: Address,
+    pub voting_power_strategy: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Asset {
+    pub token: Address,
+    pub chain_id: u64,
+    pub voting_power_strategy: String,
+    pub delegation_strategy: String,
+    pub restaking: Vec<Restaking>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RiscVotingProtocolConfig {
+    pub voting_protocol_version: String,
+    pub assets: Vec<Asset>,
 }

@@ -5,4 +5,7 @@ edition.workspace = true
 
 [dependencies]
 alloy-primitives = { version = "0.7" }
+alloy-sol-types = { version = "0.7" }
 risc0-steel = { git = "https://github.com/risc0/risc0-ethereum", tag = "v1.0.0" }
+serde_json = "1.0.125"
+serde = "1.0.208"
