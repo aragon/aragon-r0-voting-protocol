@@ -1,4 +1,4 @@
-use alloy_primitives::Address;
+use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
 use apps::TxSender;
@@ -42,17 +42,37 @@ struct Args {
     #[clap(long)]
     block_number: Option<u64>,
 
+    /// Voter's signature
+    #[clap(long)]
+    voter_signature: Vec<u8>,
+
+    /// Account address to read the balance_of on Ethereum
+    #[clap(long)]
+    voter: Address,
+
+    /// Account address of the DAO the voter is voting for
+    #[clap(long)]
+    dao_address: Address,
+
+    /// Proposal ID
+    #[clap(long)]
+    proposal_id: U256,
+
+    /// Vote direction
+    #[clap(long)]
+    direction: u8,
+
+    /// Voter's balance
+    #[clap(long)]
+    balance: U256,
+
     /// Counter's contract address on Ethereum
     #[clap(long)]
-    contract: Address,
+    config_contract: Address,
 
     /// ERC20 contract address on Ethereum
     #[clap(long)]
     token: Address,
-
-    /// Account address to read the balance_of on Ethereum
-    #[clap(long)]
-    account: Address,
 }
 
 fn main() -> Result<()> {
@@ -72,13 +92,13 @@ fn main() -> Result<()> {
 
     // Making the preflighs. This step is mandatory
     let primary_call = ConfigContract::getConfigCall {};
-    let mut primary_contract = Contract::preflight(args.contract, &mut env);
+    let mut primary_contract = Contract::preflight(args.config_contract, &mut env);
     let primary_returns = primary_contract.call_builder(&primary_call).call()?;
     println!("Primary contract returns: {:?}", primary_returns._0);
 
     // Prepare the function call
     let call = IERC20::balanceOfCall {
-        account: args.account,
+        account: args.voter,
     };
 
     // Preflight the call to execute the function in the guest.
@@ -96,8 +116,13 @@ fn main() -> Result<()> {
     let view_call_input = env.into_input()?;
     let env = ExecutorEnv::builder()
         .write(&view_call_input)?
-        .write(&args.account)?
-        .write(&args.contract)?
+        .write(&args.voter_signature)?
+        .write(&args.voter)?
+        .write(&args.dao_address)?
+        .write(&args.proposal_id)?
+        .write(&args.direction)?
+        .write(&args.balance)?
+        .write(&args.config_contract)?
         .build()?;
 
     let receipt = default_prover()
@@ -115,7 +140,7 @@ fn main() -> Result<()> {
         args.chain_id,
         &args.rpc_url,
         &args.eth_wallet_private_key,
-        &args.contract.to_string(),
+        &args.config_contract.to_string(),
     )?;
 
     // Encode the groth16 seal with the selector

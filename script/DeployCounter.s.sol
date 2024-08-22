@@ -46,7 +46,7 @@ contract CounterrDeploy is Script {
         console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
 
         string memory config = vm.readFile("RiscVotingProtocolConfig.txt");
-        Counter counter = new Counter(verifier, address(toyken), config);
+        Counter counter = new Counter(verifier, config);
         console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();

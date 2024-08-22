@@ -23,6 +23,14 @@ risc0-zkvm = { version = "1.0", default-features = false, features = ["std"] }
 serde_json = "1.0.125"
 serde = "1.0.208"
 strategies = { path = "../../strategies" }
+tiny-keccak = { version = "2.0", features = ["keccak"] }
+k256 = { version = "0.13.3", features = [
+    "arithmetic",
+    "serde",
+    "expose-field",
+    "std",
+    "ecdsa",
+], default-features = false }
 
 
 [patch.crates-io]

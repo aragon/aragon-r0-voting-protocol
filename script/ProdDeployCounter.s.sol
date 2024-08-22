@@ -43,11 +43,7 @@ contract CounterDeploy is Script {
         );
 
         console2.logBytes(abi.encode(config));
-        Counter counter = new Counter(
-            verifier,
-            address(0x185Bb1cca668C474214e934028A3e4BB7A5E6525),
-            config
-        );
+        Counter counter = new Counter(verifier, config);
         console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();

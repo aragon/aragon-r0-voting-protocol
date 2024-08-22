@@ -5,8 +5,13 @@ cargo build
 # These are some examples of live values that you can use to test the publisher
 export TOYKEN_ADDRESS=0x185Bb1cca668C474214e934028A3e4BB7A5E6525
 export PROVING_BLOCK_NUMBER=6510349
-export USER_ADDRESS=0x8bF1e340055c7dE62F11229A149d3A1918de3d74
+export VOTER_SIGNATURE=
+export VOTER=0x8bF1e340055c7dE62F11229A149d3A1918de3d74
 export COUNTER_ADDRESS=0x69c0a2ceaef9721F1EC10cbaa033f1EE60e84490
+export DAO_ADDRESS=0x69c0a2ceaef9721F1EC10cbaa033f1EE60e84490
+export PROPOSAL_ID=0
+export DIRECTION=1
+export BALANCE=1000000000000000000
 
 COUNTER_VALUE=$(cast call --rpc-url ${RPC_URL} ${COUNTER_ADDRESS:?} 'get()(uint256)')
 
@@ -30,9 +35,14 @@ cargo run --bin publisher -- \
     --chain-id=11155111 \
     --rpc-url=${RPC_URL} \
     --block-number=${PROVING_BLOCK_NUMBER:?} \
-    --contract=${COUNTER_ADDRESS:?} \
-    --token=${TOYKEN_ADDRESS:?} \
-    --account=${USER_ADDRESS}
+    --voter-signature=${VOTER_SIGNATURE} \
+    --voter=${VOTER} \
+    --dao-address=${DAO_ADDRESS} \
+    --proposal-id=${PROPOSAL_ID} \
+    --direction=${DIRECTION} \
+    --balance=${BALANCE} \
+    --config-contract=${COUNTER_ADDRESS:?} \
+    --token=${TOYKEN_ADDRESS:?} 
 
 # Attempt to verify counter value as part of the script logic
 echo "Verifying state..."

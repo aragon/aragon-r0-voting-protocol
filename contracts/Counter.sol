@@ -34,7 +34,7 @@ contract Counter is ICounter, RiscVotingProtocolConfig {
     IRiscZeroVerifier public immutable verifier;
 
     /// @notice Address of the ERC-20 token contract.
-    address public immutable tokenAddress;
+    address public immutable configContract;
 
     /// @notice Counter to track the number of successful verifications.
     uint256 public counter;
@@ -42,17 +42,18 @@ contract Counter is ICounter, RiscVotingProtocolConfig {
     /// @notice Journal that is committed to by the guest.
     struct Journal {
         Steel.Commitment commitment;
-        address tokenAddress;
+        address configContract;
+        address voter;
+        uint256 balance;
+        uint8 direction;
     }
 
     /// @notice Initialize the contract, binding it to a specified RISC Zero verifier and ERC-20 token address.
     constructor(
         IRiscZeroVerifier _verifier,
-        address _tokenAddress,
         string memory _config
     ) RiscVotingProtocolConfig(_config) {
         verifier = _verifier;
-        tokenAddress = _tokenAddress;
         counter = 0;
     }
 
@@ -63,8 +64,11 @@ contract Counter is ICounter, RiscVotingProtocolConfig {
     ) external {
         // Decode and validate the journal data
         Journal memory journal = abi.decode(journalData, (Journal));
-        require(journal.tokenAddress == tokenAddress, "Invalid token address");
-        // Steels function to validate the commitment relies on the blockhas() function, which is only valid on the latest 256 blocks
+        require(
+            journal.configContract == address(this),
+            "Invalid token address"
+        );
+        // Steels function to validate the commitment relies on the blockhash() function, which is only valid on the latest 256 blocks
         // Therefore I'm commenting it out, and I recommend checking against a stored block commitment in the contract
         /*
         require(
@@ -79,7 +83,11 @@ contract Counter is ICounter, RiscVotingProtocolConfig {
         bytes32 journalHash = sha256(journalData);
         verifier.verify(seal, imageId, journalHash);
 
-        counter += 1;
+        if (journal.direction == 1) {
+            counter += journal.balance;
+        } else {
+            counter -= journal.balance;
+        }
     }
 
     /// @inheritdoc ICounter
