@@ -2,3 +2,4 @@ forge-std/=lib/forge-std/src/
 openzeppelin/=lib/openzeppelin-contracts/
 openzeppelin-contracts/=lib/openzeppelin-contracts/contracts/
 risc0/=lib/risc0/
+@aragon/osx-commons/=lib/osx-commons/contracts/src/

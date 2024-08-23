@@ -16,6 +16,7 @@
 
 pragma solidity ^0.8.20;
 
+import {PluginUUPSUpgradeable} from "@aragon/osx-commons/plugin/PluginUUPSUpgradeable.sol";
 import {RiscVotingProtocolConfig} from "./RiscVotingProtocolConfig.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
