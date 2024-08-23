@@ -17,17 +17,18 @@
 pragma solidity ^0.8.20;
 
 import {PluginUUPSUpgradeable} from "@aragon/osx-commons/plugin/PluginUUPSUpgradeable.sol";
+import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
+
 import {RiscVotingProtocolConfig} from "./RiscVotingProtocolConfig.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
-import {ICounter} from "./ICounter.sol";
 import {ImageID} from "./ImageID.sol"; // auto-generated contract after running `cargo build`.
 
 /// @title Counter
 /// @notice Implements a counter that increments based on off-chain Steel proofs submitted to this contract.
 /// @dev The contract interacts with ERC-20 tokens, using Steel proofs to verify that an account holds at least 1 token
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
-contract Counter is ICounter, RiscVotingProtocolConfig {
+contract RiscVotingProtocolPlugin is RiscVotingProtocolConfig {
     /// @notice Image ID of the only zkVM binary to accept verification from.
     bytes32 public constant imageId = ImageID.VOTING_PROTOCOL_ID;
 
@@ -55,7 +56,6 @@ contract Counter is ICounter, RiscVotingProtocolConfig {
         counter = 0;
     }
 
-    /// @inheritdoc ICounter
     function increment(
         bytes calldata journalData,
         bytes calldata seal
@@ -88,7 +88,6 @@ contract Counter is ICounter, RiscVotingProtocolConfig {
         }
     }
 
-    /// @inheritdoc ICounter
     function get() external view returns (uint256) {
         return counter;
     }

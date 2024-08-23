@@ -20,7 +20,7 @@ import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 
-import {Counter} from "../contracts/Counter.sol";
+import {RiscVotingProtocolPlugin} from "../contracts/RiscVotingProtocolPlugin.sol";
 import {ERC20} from "../contracts/ERC20.sol";
 
 /// @notice Deployment script for the Counter contract.
@@ -43,7 +43,10 @@ contract CounterDeploy is Script {
         );
 
         console2.logBytes(abi.encode(config));
-        Counter counter = new Counter(verifier, config);
+        RiscVotingProtocolPlugin counter = new RiscVotingProtocolPlugin(
+            verifier,
+            config
+        );
         console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();

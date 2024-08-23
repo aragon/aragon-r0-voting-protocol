@@ -21,7 +21,7 @@ import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 
-import {Counter} from "../contracts/Counter.sol";
+import {RiscVotingProtocolPlugin} from "../contracts/RiscVotingProtocolPlugin.sol";
 import {ERC20} from "../contracts/ERC20.sol";
 
 /// @notice Deployment script for the Counter contract.
@@ -30,7 +30,7 @@ import {ERC20} from "../contracts/ERC20.sol";
 ///
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
-contract CounterrDeploy is Script {
+contract Deploy is Script {
     function run() external {
         uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
 
@@ -46,7 +46,10 @@ contract CounterrDeploy is Script {
         console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
 
         string memory config = vm.readFile("RiscVotingProtocolConfig.txt");
-        Counter counter = new Counter(verifier, config);
+        RiscVotingProtocolPlugin counter = new RiscVotingProtocolPlugin(
+            verifier,
+            config
+        );
         console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();
