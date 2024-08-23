@@ -26,6 +26,7 @@ import {ProxyLib} from "@aragon/osx-commons/utils/deployment/ProxyLib.sol";
 /// @dev v1.0 (Release 1, Build 0)
 /// @custom:security-contact sirt@aragon.org
 contract RiscVotingProtocolPluginSetup is PluginUpgradeableSetup {
+    using Address for address;
     using Clones for address;
     using ERC165Checker for address;
     using ProxyLib for address;
