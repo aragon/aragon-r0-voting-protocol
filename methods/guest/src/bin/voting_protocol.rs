@@ -3,6 +3,7 @@
 
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolValue};
+use hex::FromHex;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmInput, Contract, SolCommitment};
 use risc0_zkvm::guest::env;
 
@@ -107,7 +108,7 @@ fn main() {
     // Read the input from the guest environment.
     println!("Reading input from the guest environment");
     let input: EthEvmInput = env::read();
-    let signature: Signature = env::read();
+    let signature: String = env::read();
     let voter: Address = env::read();
     let dao: Address = env::read();
     let proposal_id: U256 = env::read();
@@ -122,8 +123,10 @@ fn main() {
         direction,
         balance,
     );
-    let v = signature.to_bytes()[64];
-    let rs = signature.to_bytes()[0..64].try_into().unwrap();
+    let byte_signature = Vec::from_hex(signature).expect("Invalid hex string");
+
+    let v = byte_signature[64];
+    let rs = byte_signature[0..64].try_into().unwrap();
     let signature_address = ecrecover(v, rs, digest);
 
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used
@@ -159,6 +162,10 @@ fn main() {
     assert!(direction == 0 || direction == 1);
 
     assert!(balance > U256::from(0));
+    println!(
+        "Voter: {:?}, Signature Address: {:?}",
+        voter, signature_address
+    );
     assert!(voter == signature_address);
     assert!(balance == total_voting_power);
 

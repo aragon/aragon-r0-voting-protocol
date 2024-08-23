@@ -44,7 +44,7 @@ struct Args {
 
     /// Voter's signature
     #[clap(long)]
-    voter_signature: Vec<u8>,
+    voter_signature: String,
 
     /// Account address to read the balance_of on Ethereum
     #[clap(long)]
@@ -94,7 +94,7 @@ fn main() -> Result<()> {
     let primary_call = ConfigContract::getConfigCall {};
     let mut primary_contract = Contract::preflight(args.config_contract, &mut env);
     let primary_returns = primary_contract.call_builder(&primary_call).call()?;
-    println!("Primary contract returns: {:?}", primary_returns._0);
+    println!("Config string: {:?}", primary_returns._0);
 
     // Prepare the function call
     let call = IERC20::balanceOfCall {
@@ -113,6 +113,7 @@ fn main() -> Result<()> {
     );
 
     println!("proving...");
+
     let view_call_input = env.into_input()?;
     let env = ExecutorEnv::builder()
         .write(&view_call_input)?

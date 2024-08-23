@@ -31,6 +31,7 @@ k256 = { version = "0.13.3", features = [
     "std",
     "ecdsa",
 ], default-features = false }
+hex = "0.4.3"
 
 
 [patch.crates-io]

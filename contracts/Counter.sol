@@ -33,9 +33,6 @@ contract Counter is ICounter, RiscVotingProtocolConfig {
     /// @notice RISC Zero verifier contract address.
     IRiscZeroVerifier public immutable verifier;
 
-    /// @notice Address of the ERC-20 token contract.
-    address public immutable configContract;
-
     /// @notice Counter to track the number of successful verifications.
     uint256 public counter;
 
