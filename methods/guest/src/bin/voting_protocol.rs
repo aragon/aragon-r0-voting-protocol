@@ -25,7 +25,7 @@ sol! {
     }
 
     interface ConfigContract {
-        function getConfig() external view returns (string memory);
+        function getVotingProtocolConfig() external view returns (string memory);
     }
 }
 
@@ -135,7 +135,7 @@ fn main() {
     let destination_chain_id = &ETH_SEPOLIA_CHAIN_SPEC;
     let env = input.into_env().with_chain_spec(destination_chain_id);
 
-    let config_call = ConfigContract::getConfigCall {};
+    let config_call = ConfigContract::getVotingProtocolConfigCall {};
     let config_returns = Contract::new(config_contract, &env)
         .call_builder(&config_call)
         .call();

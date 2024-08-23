@@ -1,22 +1,14 @@
-// Copyright 2024 RISC Zero, Inc.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-//
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
-import {PluginUUPSUpgradeable} from "@aragon/osx-commons/plugin/PluginUUPSUpgradeable.sol";
+import {MajorityVotingBase} from "./MajorityVotingBase.sol";
+
+import {IVotesUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/utils/IVotesUpgradeable.sol";
+import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
+import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
+
+import {IMembership} from "@aragon/osx-commons/plugin/extensions/membership/IMembership.sol";
 import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
 
 import {RiscVotingProtocolConfig} from "./RiscVotingProtocolConfig.sol";
@@ -28,67 +20,205 @@ import {ImageID} from "./ImageID.sol"; // auto-generated contract after running 
 /// @notice Implements a counter that increments based on off-chain Steel proofs submitted to this contract.
 /// @dev The contract interacts with ERC-20 tokens, using Steel proofs to verify that an account holds at least 1 token
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
-contract RiscVotingProtocolPlugin is RiscVotingProtocolConfig {
+contract RiscVotingProtocolPlugin is
+    RiscVotingProtocolConfig,
+    MajorityVotingBase
+{
+    using SafeCastUpgradeable for uint256;
+
     /// @notice Image ID of the only zkVM binary to accept verification from.
     bytes32 public constant imageId = ImageID.VOTING_PROTOCOL_ID;
 
     /// @notice RISC Zero verifier contract address.
-    IRiscZeroVerifier public immutable verifier;
+    IRiscZeroVerifier public verifier;
 
-    /// @notice Counter to track the number of successful verifications.
-    uint256 public counter;
+    IVotesUpgradeable public votingToken;
 
     /// @notice Journal that is committed to by the guest.
     struct Journal {
         Steel.Commitment commitment;
         address configContract;
+        uint256 proposalId;
         address voter;
         uint256 balance;
         uint8 direction;
     }
 
-    /// @notice Initialize the contract, binding it to a specified RISC Zero verifier and ERC-20 token address.
-    constructor(
+    /// @notice Counter to track the number of successful verifications.
+    uint256 public counter;
+
+    function initialize(
+        IDAO _dao,
+        VotingSettings calldata _votingSettings,
         IRiscZeroVerifier _verifier,
-        string memory _config
-    ) RiscVotingProtocolConfig(_config) {
+        IVotesUpgradeable _token
+    ) external initializer {
         verifier = _verifier;
-        counter = 0;
+        __MajorityVotingBase_init(_dao, _votingSettings);
+        votingToken = _token;
     }
 
-    function increment(
-        bytes calldata journalData,
-        bytes calldata seal
-    ) external {
+    /// @inheritdoc MajorityVotingBase
+    function createProposal(
+        bytes calldata _metadata,
+        IDAO.Action[] calldata _actions,
+        uint256 _allowFailureMap,
+        uint64 _startDate,
+        uint64 _endDate
+    ) external override returns (uint256 proposalId) {
+        // Check that either `_msgSender` owns enough tokens or has enough voting power from being a delegatee.
+        {
+            uint256 minProposerVotingPower_ = minProposerVotingPower();
+
+            if (minProposerVotingPower_ != 0) {
+                // Because of the checks in `TokenVotingSetup`, we can assume that `votingToken`
+                // is an [ERC-20](https://eips.ethereum.org/EIPS/eip-20) token.
+                if (
+                    votingToken.getVotes(_msgSender()) <
+                    minProposerVotingPower_ &&
+                    IERC20Upgradeable(address(votingToken)).balanceOf(
+                        _msgSender()
+                    ) <
+                    minProposerVotingPower_
+                ) {
+                    revert ProposalCreationForbidden(_msgSender());
+                }
+            }
+        }
+
+        uint256 snapshotBlock;
+        unchecked {
+            // The snapshot block must be mined already to
+            // protect the transaction against backrunning transactions causing census changes.
+            snapshotBlock = block.number - 1;
+        }
+
+        (_startDate, _endDate) = _validateProposalDates(_startDate, _endDate);
+
+        proposalId = _createProposal({
+            _creator: _msgSender(),
+            _metadata: _metadata,
+            _startDate: _startDate,
+            _endDate: _endDate,
+            _actions: _actions,
+            _allowFailureMap: _allowFailureMap
+        });
+
+        // Store proposal related information
+        Proposal storage proposal_ = proposals[proposalId];
+
+        proposal_.parameters.startDate = _startDate;
+        proposal_.parameters.endDate = _endDate;
+        proposal_.parameters.snapshotBlock = snapshotBlock.toUint64();
+        proposal_.parameters.votingMode = votingMode();
+        proposal_.parameters.supportThreshold = supportThreshold();
+        proposal_.parameters.snapshotBlockHash = blockhash(snapshotBlock);
+
+        // Reduce costs
+        if (_allowFailureMap != 0) {
+            proposal_.allowFailureMap = _allowFailureMap;
+        }
+
+        for (uint256 i; i < _actions.length; ) {
+            proposal_.actions.push(_actions[i]);
+            unchecked {
+                ++i;
+            }
+        }
+    }
+
+    function vote(bytes calldata journalData, bytes calldata seal) external {
         // Decode and validate the journal data
         Journal memory journal = abi.decode(journalData, (Journal));
         require(
             journal.configContract == address(this),
             "Invalid token address"
         );
-        // Steels function to validate the commitment relies on the blockhash() function, which is only valid on the latest 256 blocks
-        // Therefore I'm commenting it out, and I recommend checking against a stored block commitment in the contract
-        /*
+
+        Proposal storage proposal_ = proposals[journal.proposalId];
+
         require(
-            Steel.validateCommitment(journal.commitment),
+            journal.commitment.blockHash ==
+                proposal_.parameters.snapshotBlockHash,
             "Invalid commitment"
         );
-        */
-        // require(journal.commitment.blockHash == <<SOME_STORAGE_BLOCK_HASH>>, "Invalid commitment");
-        // require(journal.commitment.blockNumber == <<SOME_STORAGE_BLOCK_NUMBER>>, "Invalid commitment");
+        require(
+            journal.commitment.blockNumber ==
+                proposal_.parameters.snapshotBlock,
+            "Invalid commitment"
+        );
 
         // Verify the proof
         bytes32 journalHash = sha256(journalData);
         verifier.verify(seal, imageId, journalHash);
 
-        if (journal.direction == 1) {
-            counter += journal.balance;
-        } else {
-            counter -= journal.balance;
+        // The actual vote
+        // This could re-enter, though we can assume the governance token is not malicious
+        uint256 votingPower = journal.balance;
+        address _voter = journal.voter;
+        VoteOption state = proposal_.voters[_voter];
+
+        // If voter had previously voted, decrease count
+        if (state == VoteOption.Yes) {
+            proposal_.tally.yes = proposal_.tally.yes - votingPower;
+        } else if (state == VoteOption.No) {
+            proposal_.tally.no = proposal_.tally.no - votingPower;
+        } else if (state == VoteOption.Abstain) {
+            proposal_.tally.abstain = proposal_.tally.abstain - votingPower;
         }
+
+        // write the updated/new vote for the voter.
+        VoteOption _voteOption = VoteOption(journal.direction);
+        if (_voteOption == VoteOption.Yes) {
+            proposal_.tally.yes = proposal_.tally.yes + votingPower;
+        } else if (_voteOption == VoteOption.No) {
+            proposal_.tally.no = proposal_.tally.no + votingPower;
+        } else if (_voteOption == VoteOption.Abstain) {
+            proposal_.tally.abstain = proposal_.tally.abstain + votingPower;
+        }
+
+        proposal_.voters[_voter] = _voteOption;
+
+        emit VoteCast({
+            proposalId: journal.proposalId,
+            voter: _voter,
+            voteOption: _voteOption,
+            votingPower: votingPower
+        });
     }
 
-    function get() external view returns (uint256) {
-        return counter;
+    /// @inheritdoc MajorityVotingBase
+    function _canVote(
+        uint256 _proposalId,
+        address _account,
+        VoteOption _voteOption
+    ) internal view override returns (bool) {
+        Proposal storage proposal_ = proposals[_proposalId];
+
+        // The proposal vote hasn't started or has already ended.
+        if (!_isProposalOpen(proposal_)) {
+            return false;
+        }
+
+        // The voter votes `None` which is not allowed.
+        if (_voteOption == VoteOption.None) {
+            return false;
+        }
+
+        // The voter has already voted but vote replacment is not allowed.
+        if (
+            proposal_.voters[_account] != VoteOption.None &&
+            proposal_.parameters.votingMode != VotingMode.VoteReplacement
+        ) {
+            return false;
+        }
+
+        return true;
     }
+
+    // TODO: Revisit this number
+    /// @dev This empty reserved space is put in place to allow future versions to add new
+    /// variables without shifting down storage in the inheritance chain.
+    /// https://docs.openzeppelin.com/contracts/4.x/upgradeable#storage_gaps
+    uint256[49] private __gap;
 }

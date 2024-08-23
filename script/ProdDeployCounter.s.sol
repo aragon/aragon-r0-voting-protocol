@@ -43,11 +43,8 @@ contract CounterDeploy is Script {
         );
 
         console2.logBytes(abi.encode(config));
-        RiscVotingProtocolPlugin counter = new RiscVotingProtocolPlugin(
-            verifier,
-            config
-        );
-        console2.log("Deployed Counter to", address(counter));
+        // RiscVotingProtocolPlugin counter = new RiscVotingProtocolPlugin( verifier, config);
+        // console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();
     }

@@ -46,11 +46,8 @@ contract Deploy is Script {
         console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
 
         string memory config = vm.readFile("RiscVotingProtocolConfig.txt");
-        RiscVotingProtocolPlugin counter = new RiscVotingProtocolPlugin(
-            verifier,
-            config
-        );
-        console2.log("Deployed Counter to", address(counter));
+        // RiscVotingProtocolPlugin counter = new RiscVotingProtocolPlugin( verifier, config);
+        // console2.log("Deployed Counter to", address(counter));
 
         vm.stopBroadcast();
     }

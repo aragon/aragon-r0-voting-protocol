@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.24;
 
 contract RiscVotingProtocolConfig {
     string public config;
 
-    constructor(string memory _config) {
-        config = _config;
-    }
+    event ConfigSet(string config);
 
     function getConfig() public view returns (string memory) {
         return config;
     }
 
-    function setConfig(string memory _config) public {
+    function setRiscVotingProtocolConfig(string memory _config) internal {
         config = _config;
+
+        emit ConfigSet(_config);
     }
 }

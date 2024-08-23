@@ -16,7 +16,7 @@ sol! {
         function balanceOf(address account) external view returns (uint);
     }
     interface ConfigContract {
-        function getConfig() external view returns (string memory);
+        function getVotingProtocolConfig() external view returns (string memory);
     }
 }
 
@@ -91,10 +91,10 @@ fn main() -> Result<()> {
     env = env.with_chain_spec(&ETH_SEPOLIA_CHAIN_SPEC);
 
     // Making the preflighs. This step is mandatory
-    let primary_call = ConfigContract::getConfigCall {};
-    let mut primary_contract = Contract::preflight(args.config_contract, &mut env);
-    let primary_returns = primary_contract.call_builder(&primary_call).call()?;
-    println!("Config string: {:?}", primary_returns._0);
+    let config_call = ConfigContract::getVotingProtocolConfigCall {};
+    let mut config_contract = Contract::preflight(args.config_contract, &mut env);
+    let config_returns = config_contract.call_builder(&config_call).call()?;
+    println!("Config string: {:?}", config_returns._0);
 
     // Prepare the function call
     let call = IERC20::balanceOfCall {
