@@ -212,6 +212,16 @@ contract RiscVotingProtocolPlugin is
         return true;
     }
 
+    /// @inheritdoc MajorityVotingBase
+    function execute(uint256 _proposalId) public override {
+        if (!_canExecute(_proposalId)) {
+            revert ProposalExecutionForbidden(_proposalId);
+        }
+
+        // TODO: Here we need to add another proof that you can execute the proposal.
+        _execute(_proposalId);
+    }
+
     // TODO: Revisit this number
     /// @dev This empty reserved space is put in place to allow future versions to add new
     /// variables without shifting down storage in the inheritance chain.

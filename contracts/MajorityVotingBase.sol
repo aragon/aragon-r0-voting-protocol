@@ -301,12 +301,7 @@ abstract contract MajorityVotingBase is
     }
 
     /// @inheritdoc IMajorityVoting
-    function execute(uint256 _proposalId) public virtual {
-        if (!_canExecute(_proposalId)) {
-            revert ProposalExecutionForbidden(_proposalId);
-        }
-        _execute(_proposalId);
-    }
+    function execute(uint256 _proposalId) public virtual;
 
     /// @inheritdoc IMajorityVoting
     function getVoteOption(
