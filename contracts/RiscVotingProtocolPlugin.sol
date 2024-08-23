@@ -4,7 +4,6 @@ pragma solidity ^0.8.24;
 
 import {MajorityVotingBase} from "./MajorityVotingBase.sol";
 
-import {IVotesUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/utils/IVotesUpgradeable.sol";
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 
@@ -32,7 +31,7 @@ contract RiscVotingProtocolPlugin is
     /// @notice RISC Zero verifier contract address.
     IRiscZeroVerifier public verifier;
 
-    IVotesUpgradeable public votingToken;
+    IERC20Upgradeable public votingToken;
 
     /// @notice Journal that is committed to by the guest.
     struct Journal {
@@ -51,7 +50,7 @@ contract RiscVotingProtocolPlugin is
         IDAO _dao,
         VotingSettings calldata _votingSettings,
         IRiscZeroVerifier _verifier,
-        IVotesUpgradeable _token
+        IERC20Upgradeable _token
     ) external initializer {
         verifier = _verifier;
         __MajorityVotingBase_init(_dao, _votingSettings);
@@ -74,12 +73,9 @@ contract RiscVotingProtocolPlugin is
                 // Because of the checks in `TokenVotingSetup`, we can assume that `votingToken`
                 // is an [ERC-20](https://eips.ethereum.org/EIPS/eip-20) token.
                 if (
-                    votingToken.getVotes(_msgSender()) <
-                    minProposerVotingPower_ &&
                     IERC20Upgradeable(address(votingToken)).balanceOf(
                         _msgSender()
-                    ) <
-                    minProposerVotingPower_
+                    ) < minProposerVotingPower_
                 ) {
                     revert ProposalCreationForbidden(_msgSender());
                 }
