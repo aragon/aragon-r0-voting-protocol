@@ -1,3 +1,6 @@
 [submodule "contracts/src/osx-commons"]
 	path = contracts/src/osx-commons
 	url = https://github.com/aragon/osx-commons
+[submodule "lib/osx-commons"]
+	path = lib/osx-commons
+	url = https://github.com/aragon/osx-commons
