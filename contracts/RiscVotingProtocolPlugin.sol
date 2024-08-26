@@ -10,7 +10,6 @@ import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/mat
 import {IMembership} from "@aragon/osx-commons/plugin/extensions/membership/IMembership.sol";
 import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
 
-import {RiscVotingProtocolConfig} from "./RiscVotingProtocolConfig.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
 import {ImageID} from "./ImageID.sol"; // auto-generated contract after running `cargo build`.
@@ -19,10 +18,7 @@ import {ImageID} from "./ImageID.sol"; // auto-generated contract after running 
 /// @notice Implements a counter that increments based on off-chain Steel proofs submitted to this contract.
 /// @dev The contract interacts with ERC-20 tokens, using Steel proofs to verify that an account holds at least 1 token
 /// before incrementing the counter. This contract leverages RISC0-zkVM for generating and verifying these proofs.
-contract RiscVotingProtocolPlugin is
-    RiscVotingProtocolConfig,
-    MajorityVotingBase
-{
+contract RiscVotingProtocolPlugin is MajorityVotingBase {
     using SafeCastUpgradeable for uint256;
 
     /// @notice Image ID of the only zkVM binary to accept verification from.
