@@ -20,7 +20,7 @@ sol! {
     }
 }
 
-sol!("../contracts/ICounter.sol");
+sol!("../contracts/IMajorityVoting.sol");
 
 /// Arguments of the publisher CLI.
 #[derive(Parser, Debug)]
@@ -148,7 +148,7 @@ fn main() -> Result<()> {
     let seal = encode(receipt.inner.groth16()?.seal.clone())?;
 
     // Encode the function call for `ICounter.increment(journal, seal)`.
-    let calldata = ICounter::incrementCall {
+    let calldata = IMajorityVoting::voteCall {
         journalData: receipt.journal.bytes.into(),
         seal: seal.into(),
     }

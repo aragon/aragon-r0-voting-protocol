@@ -119,7 +119,10 @@ contract RiscVotingProtocolPlugin is MajorityVotingBase {
         }
     }
 
-    function vote(bytes calldata journalData, bytes calldata seal) external {
+    function vote(
+        bytes calldata journalData,
+        bytes calldata seal
+    ) external override {
         // Decode and validate the journal data
         Journal memory journal = abi.decode(journalData, (Journal));
         require(

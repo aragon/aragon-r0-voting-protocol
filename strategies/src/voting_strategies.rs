@@ -9,6 +9,12 @@ pub trait ProtocolStrategy {
         account: Address,
         asset: &Asset,
     ) -> U256;
+
+    fn get_supply(
+        &self,
+        env: &EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
+        asset: &Asset,
+    ) -> U256;
 }
 
 mod balance_of;

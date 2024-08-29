@@ -74,4 +74,9 @@ interface IMajorityVoting {
         uint256 _proposalId,
         address _account
     ) external view returns (VoteOption);
+
+    /// @notice Allows a voter to cast a vote on a proposal.
+    /// @param journalData The journal data containing the proposal ID, voter, vote option, and voting power.
+    /// @param seal The seal of the journal data.
+    function vote(bytes calldata journalData, bytes calldata seal) external;
 }

@@ -321,6 +321,12 @@ abstract contract MajorityVotingBase is
     }
 
     /// @inheritdoc IMajorityVoting
+    function vote(
+        bytes calldata journalData,
+        bytes calldata seal
+    ) external virtual;
+
+    /// @inheritdoc IMajorityVoting
     function canExecute(
         uint256 _proposalId
     ) public view virtual returns (bool) {
