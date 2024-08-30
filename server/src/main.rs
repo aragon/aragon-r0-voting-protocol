@@ -1,21 +1,14 @@
-use axum::{
-    http::StatusCode,
-    routing::{get, post},
-    Json, Router,
-};
+use axum::{http::StatusCode, routing::post, Json, Router};
+use dotenvy::dotenv;
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 
 #[tokio::main]
 async fn main() {
-    // initialize tracing
+    dotenv().ok();
     tracing_subscriber::fmt::init();
 
-    // build our application with a route
-    let app = Router::new()
-        // `GET /` goes to `root`
-        .route("/", get(root))
-        // `POST /users` goes to `create_user`
-        .route("/users", post(create_user));
+    let app = Router::new().route("/", post(root));
 
     // run our app with hyper, listening globally on port 3000
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -23,35 +16,65 @@ async fn main() {
 }
 
 // basic handler that responds with a static string
-async fn root() -> &'static str {
-    "Hello, World!"
-}
+async fn root(Json(payload): Json<VotingParams>) -> (StatusCode, Json<VotingResponse>) {
+    let output = Command::new("./publisher")
+        .current_dir("../target/release/")
+        // .arg("--")
+        .arg(format!(
+            "--chain-id={}",
+            std::env::var("CHAIN_ID").unwrap_or_else(|_| "11155111".to_string())
+        ))
+        .arg(format!(
+            "--rpc-url={}",
+            std::env::var("RPC_URL").unwrap_or_else(|_| "11155111".to_string())
+        ))
+        .arg(format!("--block-number={}", payload.block_number))
+        .arg(format!("--voter-signature={}", payload.voter_signature))
+        .arg(format!("--voter={}", payload.voter))
+        .arg(format!("--dao-address={}", payload.dao_address))
+        .arg(format!("--proposal-id={}", payload.proposal_id))
+        .arg(format!("--direction={}", payload.direction))
+        .arg(format!("--balance={}", payload.balance))
+        .arg(format!("--config-contract={}", payload.config_contract))
+        .arg(format!("--token={}", payload.token_address))
+        .output()
+        .expect("Failed to execute command");
 
-async fn create_user(
-    // this argument tells axum to parse the request body
-    // as JSON into a `CreateUser` type
-    Json(payload): Json<CreateUser>,
-) -> (StatusCode, Json<User>) {
-    // insert your application logic here
-    let user = User {
-        id: 1337,
-        username: payload.username,
+    let success = output.status.success();
+    let message = if success {
+        String::from_utf8_lossy(&output.stdout).to_string()
+    } else {
+        String::from_utf8_lossy(&output.stderr).to_string()
     };
 
-    // this will be converted into a JSON response
-    // with a status code of `201 Created`
-    (StatusCode::CREATED, Json(user))
+    let response = VotingResponse { success, message };
+
+    (
+        if success {
+            StatusCode::OK
+        } else {
+            StatusCode::INTERNAL_SERVER_ERROR
+        },
+        Json(response),
+    )
 }
 
-// the input to our `create_user` handler
 #[derive(Deserialize)]
-struct CreateUser {
-    username: String,
+struct VotingParams {
+    block_number: String,
+    voter_signature: String,
+    voter: String,
+    dao_address: String,
+    proposal_id: String,
+    direction: u8,
+    balance: String,
+    config_contract: String,
+    token_address: String,
 }
 
-// the output to our `create_user` handler
 #[derive(Serialize)]
-struct User {
-    id: u64,
-    username: String,
+struct VotingResponse {
+    success: bool,
+    message: String,
 }
+
