@@ -22,7 +22,9 @@ contract RiscVotingProtocolPlugin is MajorityVotingBase {
     using SafeCastUpgradeable for uint256;
 
     /// @notice Image ID of the only zkVM binary to accept verification from.
-    bytes32 public constant imageId = ImageID.VOTING_PROTOCOL_ID;
+    bytes32 public constant votingProtocolImageId = ImageID.VOTING_PROTOCOL_ID;
+    bytes32 public constant executionProtocolImageId =
+        ImageID.EXECUTION_PROTOCOL_ID;
 
     /// @notice RISC Zero verifier contract address.
     IRiscZeroVerifier public verifier;
@@ -30,7 +32,16 @@ contract RiscVotingProtocolPlugin is MajorityVotingBase {
     IERC20Upgradeable public votingToken;
 
     /// @notice Journal that is committed to by the guest.
-    struct Journal {
+    struct VotingJournal {
+        Steel.Commitment commitment;
+        address configContract;
+        uint256 proposalId;
+        address voter;
+        uint256 balance;
+        uint8 direction;
+    }
+
+    struct ExecutionJournal {
         Steel.Commitment commitment;
         address configContract;
         uint256 proposalId;
@@ -124,7 +135,7 @@ contract RiscVotingProtocolPlugin is MajorityVotingBase {
         bytes calldata seal
     ) external override {
         // Decode and validate the journal data
-        Journal memory journal = abi.decode(journalData, (Journal));
+        VotingJournal memory journal = abi.decode(journalData, (VotingJournal));
         require(
             journal.configContract == address(this),
             "Invalid token address"
@@ -145,7 +156,7 @@ contract RiscVotingProtocolPlugin is MajorityVotingBase {
 
         // Verify the proof
         bytes32 journalHash = sha256(journalData);
-        verifier.verify(seal, imageId, journalHash);
+        verifier.verify(seal, votingProtocolImageId, journalHash);
 
         // The actual vote
         // This could re-enter, though we can assume the governance token is not malicious
@@ -212,12 +223,39 @@ contract RiscVotingProtocolPlugin is MajorityVotingBase {
     }
 
     /// @inheritdoc MajorityVotingBase
-    function execute(uint256 _proposalId) public override {
+    function execute(
+        bytes calldata journalData,
+        bytes calldata seal
+    ) public override {
+        ExecutionJournal memory executionJournal = abi.decode(
+            journalData,
+            (ExecutionJournal)
+        );
+        require(
+            executionJournal.configContract == address(this),
+            "Invalid token address"
+        );
+        uint256 _proposalId = executionJournal.proposalId;
+        Proposal storage proposal_ = proposals[_proposalId];
+
         if (!_canExecute(_proposalId)) {
             revert ProposalExecutionForbidden(_proposalId);
         }
+        require(
+            executionJournal.commitment.blockHash ==
+                proposal_.parameters.snapshotBlockHash,
+            "Invalid commitment"
+        );
+        require(
+            executionJournal.commitment.blockNumber ==
+                proposal_.parameters.snapshotBlock,
+            "Invalid commitment"
+        );
 
-        // TODO: Here we need to add another proof that you can execute the proposal.
+        // Verify the proof
+        bytes32 journalHash = sha256(journalData);
+        verifier.verify(seal, executionProtocolImageId, journalHash);
+
         _execute(_proposalId);
     }
 

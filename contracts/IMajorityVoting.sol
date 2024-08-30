@@ -62,8 +62,9 @@ interface IMajorityVoting {
     function canExecute(uint256 _proposalId) external view returns (bool);
 
     /// @notice Executes a proposal.
-    /// @param _proposalId The ID of the proposal to be executed.
-    function execute(uint256 _proposalId) external;
+    /// @param journalData The journal data containing the proposal ID and the executor.
+    /// @param seal The seal of the journal data.
+    function execute(bytes calldata journalData, bytes calldata seal) external;
 
     /// @notice Returns whether the account has voted for the proposal.
     /// Note, that this does not check if the account has voting power.

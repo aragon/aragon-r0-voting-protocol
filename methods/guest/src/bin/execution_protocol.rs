@@ -23,6 +23,7 @@ sol! {
         SolCommitment commitment;
         address config_contract;
         uint256 proposal_id;
+        uint256[] tally;
     }
 }
 
@@ -75,6 +76,7 @@ fn main() {
         commitment: strategies_context.block_commitment(),
         config_contract,
         proposal_id,
+        tally: tally.to_vec(),
     };
     env::commit_slice(&journal.abi_encode());
 }

@@ -301,7 +301,10 @@ abstract contract MajorityVotingBase is
     }
 
     /// @inheritdoc IMajorityVoting
-    function execute(uint256 _proposalId) public virtual;
+    function execute(
+        bytes calldata journalData,
+        bytes calldata seal
+    ) public virtual;
 
     /// @inheritdoc IMajorityVoting
     function getVoteOption(
