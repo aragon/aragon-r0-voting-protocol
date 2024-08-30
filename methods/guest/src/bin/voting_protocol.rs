@@ -19,11 +19,6 @@ risc0_zkvm::guest::entry!(main);
 /// Specify the function to call using the [`sol!`] macro.
 /// This parses the Solidity syntax to generate a struct that implements the `SolCall` trait.
 sol! {
-    /// ERC-20 balance function signature.
-    interface IERC20 {
-        function balanceOf(address account) external view returns (uint);
-    }
-
     interface ConfigContract {
         function getVotingProtocolConfig() external view returns (string memory);
     }
@@ -151,7 +146,11 @@ fn main() {
         .assets
         .iter()
         .map(|asset| {
-            strategies_context.process_strategy(asset.voting_power_strategy.clone(), voter, asset)
+            strategies_context.process_voting_strategy(
+                asset.voting_power_strategy.clone(),
+                voter,
+                asset,
+            )
             // assert_eq!(asset.chain_id, destination_chain_id.chain_id());
         })
         .sum::<U256>();

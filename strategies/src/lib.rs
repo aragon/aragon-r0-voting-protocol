@@ -36,9 +36,17 @@ impl Context {
         self.protocol_strategies.insert(name, protocol_strategy);
     }
 
-    pub fn process_strategy(&self, name: String, account: Address, asset: &Asset) -> U256 {
+    pub fn process_voting_strategy(&self, name: String, account: Address, asset: &Asset) -> U256 {
         if let Some(protocol_strategy) = self.protocol_strategies.get(&name) {
             protocol_strategy.process(&self.env, account, asset)
+        } else {
+            panic!("Strategy not found: {}", name);
+        }
+    }
+
+    pub fn process_execution_strategy(&self, name: String, asset: &Asset) -> U256 {
+        if let Some(protocol_strategy) = self.protocol_strategies.get(&name) {
+            protocol_strategy.get_supply(&self.env, asset)
         } else {
             panic!("Strategy not found: {}", name);
         }

@@ -7,6 +7,10 @@ edition = "2021"
 name = "voting_protocol"
 path = "src/bin/voting_protocol.rs"
 
+[[bin]]
+name = "execution_protocol"
+path = "src/bin/execution_protocol.rs"
+
 [workspace]
 
 [dependencies]
