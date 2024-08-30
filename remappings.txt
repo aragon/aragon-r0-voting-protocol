@@ -4,3 +4,4 @@ openzeppelin/=lib/openzeppelin-contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 risc0/=lib/risc0/
 @aragon/osx-commons/=lib/osx-commons/contracts/src/
+@aragon/osx/=lib/osx/packages/contracts/src/

@@ -16,13 +16,18 @@
 
 pragma solidity ^0.8.20;
 
-import {Script} from "forge-std/Script.sol";
-import {console2} from "forge-std/console2.sol";
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 
 import {RiscVotingProtocolPlugin} from "../contracts/RiscVotingProtocolPlugin.sol";
+import {RiscVotingProtocolPluginSetup} from "../contracts/RiscVotingProtocolPluginSetup.sol";
 import {ERC20} from "../contracts/ERC20.sol";
+
+import {Script, console2} from "forge-std/Script.sol";
+import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
+import {hashHelpers, PluginSetupRef} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessorHelpers.sol";
+import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
+import {DAOFactory} from "@aragon/osx/framework/dao/DAOFactory.sol";
 
 /// @notice Deployment script for the Counter contract.
 /// @dev Use the following environment variable to control the deployment:
@@ -31,24 +36,139 @@ import {ERC20} from "../contracts/ERC20.sol";
 /// See the Foundry documentation for more information about Solidity scripts.
 /// https://book.getfoundry.sh/tutorials/solidity-scripting
 contract Deploy is Script {
+    address pluginRepoFactory;
+    DAOFactory daoFactory;
+    string nameWithEntropy;
+    address[] pluginAddress;
+    string votingProtocolConfig;
+    address token;
+
+    function setUp() public {
+        pluginRepoFactory = vm.envAddress("PLUGIN_REPO_FACTORY");
+        daoFactory = DAOFactory(vm.envAddress("DAO_FACTORY"));
+        nameWithEntropy = string.concat(
+            "risc-voting-protocol-",
+            vm.toString(block.timestamp)
+        );
+        votingProtocolConfig = vm.readFile("RiscVotingProtocolConfig.txt");
+        token = vm.envAddress("TOKEN");
+    }
+
     function run() external {
-        uint256 deployerKey = uint256(vm.envBytes32("ETH_WALLET_PRIVATE_KEY"));
+        // 0. Setting up Foundry
+        vm.startBroadcast(vm.envUint("PRIVATE_KEY"));
 
-        vm.startBroadcast(deployerKey);
+        // 1. Deploying the Plugin Setup
+        RiscVotingProtocolPluginSetup pluginSetup = deployPluginSetup();
 
-        ERC20 toyken = new ERC20("TOYKEN", "TOY", 0);
-        console2.log("Deployed ERC20 TOYKEN to", address(toyken));
+        // 2. Publishing it in the Aragon OSx Protocol
+        PluginRepo pluginRepo = deployPluginRepo(address(pluginSetup));
 
+        // 3. Defining the DAO Settings
+        DAOFactory.DAOSettings memory daoSettings = getDAOSettings();
+
+        // 4. Defining the plugin settings
+        DAOFactory.PluginSettings[] memory pluginSettings = getPluginSettings(
+            pluginRepo
+        );
+
+        // 5. Deploying the DAO
+        vm.recordLogs();
+        address createdDAO = address(
+            daoFactory.createDao(daoSettings, pluginSettings)
+        );
+
+        // 6. Getting the Plugin Address
+        Vm.Log[] memory logEntries = vm.getRecordedLogs();
+
+        for (uint256 i = 0; i < logEntries.length; i++) {
+            if (
+                logEntries[i].topics[0] ==
+                keccak256(
+                    "InstallationApplied(address,address,bytes32,bytes32)"
+                )
+            ) {
+                pluginAddress.push(
+                    address(uint160(uint256(logEntries[i].topics[2])))
+                );
+            }
+        }
+
+        vm.stopBroadcast();
+
+        // 7. Logging the resulting addresses
+        console2.log("Plugin Setup: ", address(pluginSetup));
+        console2.log("Plugin Repo: ", address(pluginRepo));
+        console2.log("Created DAO: ", address(createdDAO));
+        console2.log("Installed Plugins: ");
+        for (uint256 i = 0; i < pluginAddress.length; i++) {
+            console2.log("- ", pluginAddress[i]);
+        }
+    }
+
+    function deployPluginSetup()
+        public
+        returns (RiscVotingProtocolPluginSetup)
+    {
+        RiscVotingProtocolPluginSetup pluginSetup = new RiscVotingProtocolPluginSetup();
+        return pluginSetup;
+    }
+
+    function deployPluginRepo(
+        address pluginSetup
+    ) public returns (PluginRepo pluginRepo) {
+        pluginRepo = PluginRepoFactory(pluginRepoFactory)
+            .createPluginRepoWithFirstVersion(
+                nameWithEntropy,
+                pluginSetup,
+                msg.sender,
+                "0x00", // TODO: Give these actual values on prod
+                "0x00"
+            );
+    }
+
+    function getDAOSettings()
+        public
+        view
+        returns (DAOFactory.DAOSettings memory)
+    {
+        return DAOFactory.DAOSettings(address(0), "", nameWithEntropy, "");
+    }
+
+    function getPluginSettings(
+        PluginRepo pluginRepo
+    ) public view returns (DAOFactory.PluginSettings[] memory pluginSettings) {
+        // TODO: Get the members from a json file
+        address[] memory members = new address[](1);
+        members[0] = address(msg.sender);
+        RiscVotingProtocolPlugin.VotingSettings
+            memory votingSettings = RiscVotingProtocolPlugin.VotingSettings({
+                votingMode: RiscVotingProtocolPlugin.VotingMode.Standard,
+                supportThreshold: 50,
+                minParticipation: 10,
+                minDuration: 1,
+                minProposerVotingPower: 1,
+                votingProtocolConfig: votingProtocolConfig
+            });
         IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
             ControlID.CONTROL_ROOT,
             ControlID.BN254_CONTROL_ID
         );
-        console2.log("Deployed RiscZeroGroth16Verifier to", address(verifier));
+        RiscVotingProtocolPlugin.TokenSettings
+            memory tokenSettings = RiscVotingProtocolPlugin.TokenSettings({
+                addr: token
+            });
+        bytes memory pluginSettingsData = abi.encode(
+            votingSettings,
+            tokenSettings,
+            verifier
+        );
 
-        string memory config = vm.readFile("RiscVotingProtocolConfig.txt");
-        // RiscVotingProtocolPlugin counter = new RiscVotingProtocolPlugin( verifier, config);
-        // console2.log("Deployed Counter to", address(counter));
-
-        vm.stopBroadcast();
+        PluginRepo.Tag memory tag = PluginRepo.Tag(1, 1);
+        pluginSettings = new DAOFactory.PluginSettings[](1);
+        pluginSettings[0] = DAOFactory.PluginSettings(
+            PluginSetupRef(tag, pluginRepo),
+            pluginSettingsData
+        );
     }
 }
