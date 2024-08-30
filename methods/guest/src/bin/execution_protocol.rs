@@ -30,8 +30,9 @@ fn main() {
     // Read the input from the guest environment.
     println!("Reading input from the guest environment");
     let input: EthEvmInput = env::read();
-    let _dao: Address = env::read();
+    let dao: Address = env::read();
     let proposal_id: U256 = env::read();
+    let tally: [U256; 3] = env::read();
     let config_contract: Address = env::read();
 
     // Converts the input into a `EvmEnv` for execution. The `with_chain_spec` method is used

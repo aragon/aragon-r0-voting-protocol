@@ -79,4 +79,5 @@ pub struct Asset {
 pub struct RiscVotingProtocolConfig {
     pub voting_protocol_version: String,
     pub assets: Vec<Asset>,
+    pub execution_strategy: String,
 }
