@@ -30,7 +30,7 @@ fn main() {
     // Read the input from the guest environment.
     println!("Reading input from the guest environment");
     let input: EthEvmInput = env::read();
-    let dao: Address = env::read();
+    let _dao: Address = env::read();
     let proposal_id: U256 = env::read();
     let tally: [U256; 3] = env::read();
     let config_contract: Address = env::read();
@@ -57,14 +57,18 @@ fn main() {
         .assets
         .iter()
         .map(|asset| {
-            strategies_context
-                .process_execution_strategy(asset.voting_power_strategy.clone(), asset)
+            strategies_context.process_total_supply(asset.voting_power_strategy.clone(), asset)
         })
         .sum::<U256>();
 
     println!("Total voting power: {}", total_voting_power);
 
     // General settings constraints
+    assert!(strategies_context.process_execution_strategy(
+        config.execution_strategy,
+        total_voting_power,
+        tally
+    ));
 
     // Commit the block hash and number used when deriving `view_call_env` to the journal.
     let journal = Journal {

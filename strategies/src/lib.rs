@@ -1,6 +1,8 @@
+pub mod execution_strategies;
 pub mod voting_strategies;
 
 use alloy_primitives::{Address, U256};
+use execution_strategies::*;
 use risc0_steel::{EvmEnv, SolCommitment};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,6 +10,7 @@ use voting_strategies::*;
 
 pub struct Context {
     protocol_strategies: HashMap<String, Box<dyn ProtocolStrategy>>,
+    execution_strategies: HashMap<String, Box<dyn ProtocolExecutionStrategy>>,
     env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
 }
 
@@ -15,6 +18,7 @@ impl Context {
     pub fn new(env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>) -> Self {
         Self {
             protocol_strategies: HashMap::new(),
+            execution_strategies: HashMap::new(),
             env,
         }
     }
@@ -26,8 +30,13 @@ impl Context {
         protocol_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
         protocol_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
 
+        let mut execution_strategies: HashMap<String, Box<dyn ProtocolExecutionStrategy>> =
+            HashMap::new();
+        execution_strategies.insert("MajorityVoting".to_string(), Box::new(MajorityVoting));
+
         Self {
             protocol_strategies,
+            execution_strategies,
             env,
         }
     }
@@ -44,9 +53,22 @@ impl Context {
         }
     }
 
-    pub fn process_execution_strategy(&self, name: String, asset: &Asset) -> U256 {
+    pub fn process_total_supply(&self, name: String, asset: &Asset) -> U256 {
         if let Some(protocol_strategy) = self.protocol_strategies.get(&name) {
             protocol_strategy.get_supply(&self.env, asset)
+        } else {
+            panic!("Strategy not found: {}", name);
+        }
+    }
+
+    pub fn process_execution_strategy(
+        &self,
+        name: String,
+        total_supply: U256,
+        tally: [U256; 3],
+    ) -> bool {
+        if let Some(execution_strategy) = self.execution_strategies.get(&name) {
+            execution_strategy.proof_execution(&self.env, total_supply, tally)
         } else {
             panic!("Strategy not found: {}", name);
         }
