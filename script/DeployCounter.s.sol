@@ -144,7 +144,7 @@ contract Deploy is Script {
         RiscVotingProtocolPlugin.VotingSettings
             memory votingSettings = RiscVotingProtocolPlugin.VotingSettings({
                 votingMode: RiscVotingProtocolPlugin.VotingMode.Standard,
-                supportThreshold: 50,
+                supportThreshold: 20,
                 minParticipation: 10,
                 minDuration: 1,
                 minProposerVotingPower: 1,
