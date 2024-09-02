@@ -19,11 +19,14 @@ pragma solidity ^0.8.20;
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {ControlID, RiscZeroGroth16Verifier} from "risc0/groth16/RiscZeroGroth16Verifier.sol";
 
+import {MajorityVotingBase} from "../contracts/MajorityVotingBase.sol";
 import {RiscVotingProtocolPlugin} from "../contracts/RiscVotingProtocolPlugin.sol";
 import {RiscVotingProtocolPluginSetup} from "../contracts/RiscVotingProtocolPluginSetup.sol";
 import {ERC20} from "../contracts/ERC20.sol";
 
 import {Script, console2} from "forge-std/Script.sol";
+import {Vm} from "forge-std/Test.sol";
+
 import {PluginRepoFactory} from "@aragon/osx/framework/plugin/repo/PluginRepoFactory.sol";
 import {hashHelpers, PluginSetupRef} from "@aragon/osx/framework/plugin/setup/PluginSetupProcessorHelpers.sol";
 import {PluginRepo} from "@aragon/osx/framework/plugin/repo/PluginRepo.sol";
@@ -141,26 +144,22 @@ contract Deploy is Script {
         // TODO: Get the members from a json file
         address[] memory members = new address[](1);
         members[0] = address(msg.sender);
-        RiscVotingProtocolPlugin.VotingSettings
-            memory votingSettings = RiscVotingProtocolPlugin.VotingSettings({
-                votingMode: RiscVotingProtocolPlugin.VotingMode.Standard,
+        MajorityVotingBase.VotingSettings
+            memory votingSettings = MajorityVotingBase.VotingSettings({
+                votingMode: MajorityVotingBase.VotingMode.Standard,
                 supportThreshold: 20,
                 minParticipation: 10,
                 minDuration: 1,
                 minProposerVotingPower: 1,
                 votingProtocolConfig: votingProtocolConfig
             });
-        IRiscZeroVerifier verifier = new RiscZeroGroth16Verifier(
-            ControlID.CONTROL_ROOT,
-            ControlID.BN254_CONTROL_ID
+
+        IRiscZeroVerifier verifier = IRiscZeroVerifier(
+            0x925d8331ddc0a1F0d96E68CF073DFE1d92b69187
         );
-        RiscVotingProtocolPlugin.TokenSettings
-            memory tokenSettings = RiscVotingProtocolPlugin.TokenSettings({
-                addr: token
-            });
         bytes memory pluginSettingsData = abi.encode(
             votingSettings,
-            tokenSettings,
+            token,
             verifier
         );
 

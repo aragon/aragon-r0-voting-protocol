@@ -83,18 +83,13 @@ contract RiscVotingProtocolPluginSetup is PluginUpgradeableSetup {
         // and the required helpers
         (
             MajorityVotingBase.VotingSettings memory votingSettings,
-            TokenSettings memory tokenSettings,
+            address token,
             IRiscZeroVerifier verifier
         ) = abi.decode(
                 _data,
-                (
-                    MajorityVotingBase.VotingSettings,
-                    TokenSettings,
-                    IRiscZeroVerifier
-                )
+                (MajorityVotingBase.VotingSettings, address, IRiscZeroVerifier)
             );
 
-        address token = tokenSettings.addr;
         bool tokenAddressNotZero = token != address(0);
 
         // Prepare helpers.
