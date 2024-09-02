@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.17;
 
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 
@@ -10,26 +10,22 @@ import {ERC165Checker} from "@openzeppelin/contracts/utils/introspection/ERC165C
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {IVotesUpgradeable} from "@openzeppelin/contracts-upgradeable/governance/utils/IVotesUpgradeable.sol";
 
-import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
-import {PermissionLib} from "@aragon/osx-commons/permission/PermissionLib.sol";
-import {IPluginSetup} from "@aragon/osx-commons/plugin/setup/IPluginSetup.sol";
-import {PluginUpgradeableSetup} from "@aragon/osx-commons/plugin/setup/PluginUpgradeableSetup.sol";
+import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
+import {PermissionLib} from "@aragon/osx/core/permission/PermissionLib.sol";
+import {PluginSetup, IPluginSetup} from "@aragon/osx/framework/plugin/setup/PluginSetup.sol";
 
 import {MajorityVotingBase} from "./MajorityVotingBase.sol";
 import {RiscVotingProtocolPlugin} from "./RiscVotingProtocolPlugin.sol";
-
-import {ProxyLib} from "@aragon/osx-commons/utils/deployment/ProxyLib.sol";
 
 /// @title RiscVotingProtocolPluginSetup
 /// @author Aragon X - 2024
 /// @notice The setup contract of the `RiscVotingProtocolPlugin` plugin.
 /// @dev v1.0 (Release 1, Build 0)
 /// @custom:security-contact sirt@aragon.org
-contract RiscVotingProtocolPluginSetup is PluginUpgradeableSetup {
+contract RiscVotingProtocolPluginSetup is PluginSetup {
     using Address for address;
     using Clones for address;
     using ERC165Checker for address;
-    using ProxyLib for address;
 
     /// @notice The identifier of the `EXECUTE_PERMISSION` permission.
     /// @dev TODO: Migrate this constant to a common library that can be shared across plugins.
@@ -65,10 +61,8 @@ contract RiscVotingProtocolPluginSetup is PluginUpgradeableSetup {
 
     /// @notice The contract constructor deploying the plugin implementation contract
     /// and receiving the governance token base contracts to clone from.
-    constructor()
-        PluginUpgradeableSetup(address(new RiscVotingProtocolPlugin()))
-    {
-        votingProtocolBase = RiscVotingProtocolPlugin(IMPLEMENTATION);
+    constructor() {
+        votingProtocolBase = new RiscVotingProtocolPlugin();
     }
 
     /// @inheritdoc IPluginSetup
@@ -108,7 +102,8 @@ contract RiscVotingProtocolPluginSetup is PluginUpgradeableSetup {
         helpers[0] = token;
 
         // Prepare and deploy plugin proxy.
-        plugin = address(votingProtocolBase).deployUUPSProxy(
+        plugin = createERC1967Proxy(
+            address(votingProtocolBase),
             abi.encodeCall(
                 RiscVotingProtocolPlugin.initialize,
                 (IDAO(_dao), votingSettings, verifier, IERC20Upgradeable(token))
@@ -211,6 +206,11 @@ contract RiscVotingProtocolPluginSetup is PluginUpgradeableSetup {
             condition: PermissionLib.NO_CONDITION,
             permissionId: EXECUTE_PERMISSION_ID
         });
+    }
+
+    /// @inheritdoc IPluginSetup
+    function implementation() external view virtual override returns (address) {
+        return address(votingProtocolBase);
     }
 
     /// @notice Unsatisfiably determines if the contract is an ERC20 token.

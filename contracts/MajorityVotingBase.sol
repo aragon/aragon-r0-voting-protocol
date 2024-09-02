@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.17;
 
 /* solhint-disable max-line-length */
 
@@ -8,10 +8,11 @@ import {ERC165Upgradeable} from "@openzeppelin/contracts-upgradeable/utils/intro
 import {Initializable} from "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 
-import {ProposalUpgradeable} from "@aragon/osx-commons/plugin/extensions/proposal/ProposalUpgradeable.sol";
-import {RATIO_BASE, RatioOutOfBounds} from "@aragon/osx-commons/utils/math/Ratio.sol";
-import {PluginUUPSUpgradeable} from "@aragon/osx-commons/plugin/PluginUUPSUpgradeable.sol";
-import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
+import {ProposalUpgradeable} from "@aragon/osx/core/plugin/proposal/ProposalUpgradeable.sol";
+import {RATIO_BASE, _applyRatioCeiled, RatioOutOfBounds} from "@aragon/osx/plugins/utils/Ratio.sol";
+import {PluginUUPSUpgradeable} from "@aragon/osx/core/plugin/PluginUUPSUpgradeable.sol";
+
+import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
 
 import {IMajorityVoting} from "./IMajorityVoting.sol";
 

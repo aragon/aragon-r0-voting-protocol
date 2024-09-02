@@ -3,7 +3,5 @@ openzeppelin/=lib/openzeppelin-contracts/
 @openzeppelin/contracts/=lib/openzeppelin-contracts/contracts/
 @openzeppelin/contracts-upgradeable/=lib/openzeppelin-contracts-upgradeable/contracts/
 risc0/=lib/risc0/
-@aragon/osx-commons-contracts/=lib/osx-commons/contracts/
-@aragon/osx-commons/=lib/osx-commons/contracts/src/
 @aragon/osx/=lib/osx/packages/contracts/src/
 @ensdomains/ens-contracts/=lib/ens-contracts/

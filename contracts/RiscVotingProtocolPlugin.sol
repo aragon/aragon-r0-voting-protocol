@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
-pragma solidity ^0.8.24;
+pragma solidity ^0.8.17;
 
 import {MajorityVotingBase} from "./MajorityVotingBase.sol";
 
 import {IERC20Upgradeable} from "@openzeppelin/contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {SafeCastUpgradeable} from "@openzeppelin/contracts-upgradeable/utils/math/SafeCastUpgradeable.sol";
 
-import {IMembership} from "@aragon/osx-commons/plugin/extensions/membership/IMembership.sol";
-import {IDAO} from "@aragon/osx-commons/dao/IDAO.sol";
+import {IMembership} from "@aragon/osx/core/plugin/membership/IMembership.sol";
+import {IDAO} from "@aragon/osx/core/dao/IDAO.sol";
 
 import {IRiscZeroVerifier} from "risc0/IRiscZeroVerifier.sol";
 import {Steel} from "risc0/steel/Steel.sol";
