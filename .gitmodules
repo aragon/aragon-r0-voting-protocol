@@ -10,3 +10,7 @@
 [submodule "lib/ens-contracts"]
 	path = lib/ens-contracts
 	url = https://github.com/ensdomains/ens-contracts
+[submodule "lib/osx"]
+	path = lib/osx
+	url = https://github.com/aragon/osx
+	branch = main
