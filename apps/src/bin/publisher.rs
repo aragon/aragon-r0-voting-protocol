@@ -75,6 +75,11 @@ struct Args {
     token: Address,
 }
 
+fn to_hex_string(bytes: &[u8]) -> String {
+    // Convert each byte to its hexadecimal representation and collect into a single String
+    bytes.iter().map(|byte| format!("{:02x}", byte)).collect()
+}
+
 fn main() -> Result<()> {
     // Initialize tracing. In order to view logs, run `RUST_LOG=info cargo run`
     tracing_subscriber::fmt()
@@ -146,8 +151,13 @@ fn main() -> Result<()> {
 
     // Encode the groth16 seal with the selector
     let seal = encode(receipt.inner.groth16()?.seal.clone())?;
+    let journal_bytes = receipt.journal.bytes.as_slice();
+    let seal_bytes = seal.as_slice();
 
-    // Encode the function call for `ICounter.increment(journal, seal)`.
+    println!("journalData: {:?}", to_hex_string(journal_bytes));
+    println!("seal: {:?}", to_hex_string(seal_bytes));
+
+    // Encode the function call for `Plugin.vote(journal, seal)`.
     let calldata = IMajorityVoting::voteCall {
         journalData: receipt.journal.bytes.into(),
         seal: seal.into(),

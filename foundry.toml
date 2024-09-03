@@ -4,7 +4,9 @@ out = "out"
 libs = ["lib"]
 test = "tests"
 ffi = true
-fs_permissions = [{ access = "read", path = "./script/" }]
+# fs_permissions = [{ access = "read", path = "./script/" }]
+fs_permissions = [{ access = "read", path = "./" }]
+
 solc = "0.8.17"
 
 

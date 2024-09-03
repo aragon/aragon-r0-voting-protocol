@@ -29,6 +29,7 @@ sol! {
     struct Journal {
         SolCommitment commitment;
         address config_contract;
+        uint256 proposal_id;
         address voter;
         uint256 balance;
         uint8 direction;
@@ -172,6 +173,7 @@ fn main() {
     let journal = Journal {
         commitment: strategies_context.block_commitment(),
         config_contract,
+        proposal_id,
         voter,
         balance,
         direction,

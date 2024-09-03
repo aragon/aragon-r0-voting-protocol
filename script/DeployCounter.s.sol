@@ -53,7 +53,9 @@ contract Deploy is Script {
             "risc-voting-protocol-",
             vm.toString(block.timestamp)
         );
-        votingProtocolConfig = vm.readFile("RiscVotingProtocolConfig.txt");
+        votingProtocolConfig = vm.readFile(
+            "script/RiscVotingProtocolConfig.txt"
+        );
         token = vm.envAddress("TOKEN");
     }
 
@@ -149,7 +151,7 @@ contract Deploy is Script {
                 votingMode: MajorityVotingBase.VotingMode.Standard,
                 supportThreshold: 20,
                 minParticipation: 10,
-                minDuration: 1,
+                minDuration: 0.1 days,
                 minProposerVotingPower: 1,
                 votingProtocolConfig: votingProtocolConfig
             });
