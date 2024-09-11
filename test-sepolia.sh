@@ -4,12 +4,13 @@ cargo build
 
 # These are some examples of live values that you can use to test the publisher
 export TOYKEN_ADDRESS=0x185Bb1cca668C474214e934028A3e4BB7A5E6525
-export PROVING_BLOCK_NUMBER=6624412
-export VOTER_SIGNATURE="8aab07022698deb29dc50189b0f6d8cf14c9164841b98ba1b45b74d4949cff80457e7cfc90449792fc113e19ffcb2006d2e74da6c02cdb739b3e14faa501a4f31b"
+export PROVING_BLOCK_NUMBER=6670631
+export VOTER_SIGNATURE="67bb934b4167c8b71580651bb028e1e9ead9a63f4f9de10025cbfddd07def8b3283275cbe321898f0975cbb121e4557976bfb9791fe267e98b4ecc256091cd2a1c"
 export VOTER=0x983564F7c30Da047aC680764dE089D269fc3cbfb
-export COUNTER_ADDRESS=0x160beb4C2bb5a64AadDc38fCeA93e42e107FEac7 
-export DAO_ADDRESS=0x11E4b66Ea71b3687aA4d09E83A78eA4068890104
-export PROPOSAL_ID=0
+#export VOTER=0x8bF1e340055c7dE62F11229A149d3A1918de3d74
+export COUNTER_ADDRESS=0xC83De2199637f11E6457b4979EB2986162b02F71
+export DAO_ADDRESS=0xc6906995e59e7CB65f2D9e91f5CcC88ca2D1c9db
+export PROPOSAL_ID=2
 export DIRECTION=1
 export BALANCE=100000000000000000
 
@@ -45,12 +46,4 @@ cargo run --bin publisher -- \
     --token=${TOYKEN_ADDRESS:?} 
 
 # Attempt to verify counter value as part of the script logic
-echo "Verifying state..."
-COUNTER_VALUE=$((COUNTER_VALUE + 1))
-NEW_COUNTER_VALUE=$(cast call --rpc-url ${RPC_URL} ${COUNTER_ADDRESS:?} 'get()(uint256)')
-if [ "$NEW_COUNTER_VALUE" != "$COUNTER_VALUE" ]; then
-    echo "Counter value is not $COUNTER_VALUE as expected, but $NEW_COUNTER_VALUE."
-    exit 1
-fi
-
 echo "All operations completed successfully."

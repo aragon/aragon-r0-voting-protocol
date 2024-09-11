@@ -166,6 +166,7 @@ fn main() -> Result<()> {
 
     // Send the calldata to Ethereum.
     println!("sending tx...");
+
     let runtime = tokio::runtime::Runtime::new()?;
     runtime.block_on(tx_sender.send(calldata))?;
     println!("sending tx...done");

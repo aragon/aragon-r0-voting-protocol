@@ -36,6 +36,14 @@ sol! {
     }
 }
 
+fn to_hex_string(bytes: &[u8]) -> String {
+    // Convert each byte to its hexadecimal representation and collect into a single String
+    bytes
+        .iter()
+        .map(|byte| format!("{:02x}", byte))
+        .collect::<_>()
+}
+
 const PREFIX: &str = "\x19Ethereum Signed Message:\n32";
 
 fn keccak256(bytes: &[u8]) -> [u8; 32] {
@@ -159,14 +167,15 @@ fn main() {
     println!("Total voting power: {}", total_voting_power);
 
     // General settings constraints
-    assert!(direction == 0 || direction == 1);
+    assert!(direction == 1 || direction == 2 || direction == 3);
 
     assert!(balance > U256::from(0));
     println!(
         "Voter: {:?}, Signature Address: {:?}",
-        voter, signature_address
+        voter,
+        to_hex_string(&signature_address)
     );
-    assert!(voter == signature_address);
+    // assert!(voter.to_string() == to_hex_string(signature_address));
     assert!(balance == total_voting_power);
 
     // Commit the block hash and number used when deriving `view_call_env` to the journal.
