@@ -1,11 +1,11 @@
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
-use apps::TxSender;
+use apps::{HostContext, TxSender};
 use aragon_zk_voting_protocol_methods::VOTING_PROTOCOL_ELF;
 use clap::Parser;
 use risc0_ethereum_contracts::groth16::encode;
-use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract, EvmBlockHeader};
+use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmEnv, Contract};
 use risc0_zkvm::{default_prover, ExecutorEnv, ProverOpts, VerifierContext};
 use tracing_subscriber::EnvFilter;
 
@@ -101,21 +101,40 @@ fn main() -> Result<()> {
     let config_returns = config_contract.call_builder(&config_call).call()?;
     println!("Config string: {:?}", config_returns._0);
 
-    // Prepare the function call
-    let call = IERC20::balanceOfCall {
-        account: args.voter,
-    };
+    let config =
+        serde_json::from_str::<apps::RiscVotingProtocolConfig>(&config_returns._0).unwrap();
+    let mut strategies_context = HostContext::default(&mut env);
+    // Get the total voting power of the voter across all assets.
+    let total_voting_power = config
+        .assets
+        .iter()
+        .map(|asset| {
+            strategies_context.process_voting_power_strategy(
+                asset.voting_power_strategy.clone(),
+                args.voter,
+                asset,
+            )
+        })
+        .sum::<U256>();
 
-    // Preflight the call to execute the function in the guest.
-    let mut contract = Contract::preflight(args.token, &mut env);
-    let returns = contract.call_builder(&call).call()?;
-    println!(
-        "For block {} calling `{}` on {} returns: {}",
-        env.header().number(),
-        IERC20::balanceOfCall::SIGNATURE,
-        args.token,
-        returns._0
-    );
+    println!("Total voting power: {}", total_voting_power);
+    // Prepare the function call
+    /*
+        let call = IERC20::balanceOfCall {
+            account: args.voter,
+        };
+
+        // Preflight the call to execute the function in the guest.
+        let mut contract = Contract::preflight(args.token, &mut env);
+        let returns = contract.call_builder(&call).call()?;
+        println!(
+            "For block {} calling `{}` on {} returns: {}",
+            env.header().number(),
+            IERC20::balanceOfCall::SIGNATURE,
+            args.token,
+            returns._0
+        );
+    */
 
     println!("proving...");
 

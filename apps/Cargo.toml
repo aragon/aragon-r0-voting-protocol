@@ -14,5 +14,8 @@ log = { workspace = true }
 risc0-ethereum-contracts = { workspace = true }
 risc0-steel = { workspace = true, features = ["host"] }
 risc0-zkvm = { workspace = true, features = ["client"] }
+strategies = { path = "../strategies" }
+serde_json = "1.0.125"
+serde = "1.0.208"
 tokio = { version = "1.35", features = ["full"] }
 tracing-subscriber = { workspace = true }
