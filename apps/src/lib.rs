@@ -15,8 +15,86 @@
 // The following library provides utility functions to help with sending
 // transactions to a deployed app contract on Ethereum.
 
+pub mod voting_power_strategies;
 use anyhow::Result;
 use ethers::prelude::*;
+use risc0_steel::{host::db::ProofDb, EvmBlockHeader, EvmEnv};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
+use voting_power_strategies::*;
+
+pub(crate) type HostEvmEnv<P, H> = EvmEnv<ProofDb<P>, H>;
+
+pub struct HostContext<'a, P, H> {
+    voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>>,
+    env: &'a mut HostEvmEnv<P, H>,
+}
+
+impl<'a, P, H> HostContext<'a, P, H>
+where
+    P: risc0_steel::host::provider::Provider,
+    H: EvmBlockHeader,
+{
+    pub fn default(env: &'a mut HostEvmEnv<P, H>) -> Self {
+        let mut voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>> =
+            HashMap::new();
+        voting_power_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
+        // voting_power_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
+
+        Self {
+            voting_power_strategies,
+            env,
+        }
+    }
+
+    pub fn add_strategy(
+        &mut self,
+        name: String,
+        voting_power_strategy: Box<dyn VotingPowerStrategy<P, H>>,
+    ) {
+        self.voting_power_strategies
+            .insert(name, voting_power_strategy);
+    }
+
+    pub fn process_voting_power_strategy(
+        &mut self,
+        name: String,
+        account: alloy_primitives::Address,
+        asset: &Asset,
+    ) -> alloy_primitives::U256 {
+        if let Some(voting_power_strategy) = self.voting_power_strategies.get(&name) {
+            voting_power_strategy.process(&mut self.env, account, asset)
+        } else {
+            panic!("Strategy not found: {}", name);
+        }
+    }
+}
+
+// The input of the config
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Restaking {
+    pub address: alloy_primitives::Address,
+    pub voting_power_strategy: String,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Asset {
+    pub token: alloy_primitives::Address,
+    pub chain_id: u64,
+    pub voting_power_strategy: String,
+    pub delegation_strategy: String,
+    pub restaking: Vec<Restaking>,
+}
+
+#[derive(Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RiscVotingProtocolConfig {
+    pub voting_protocol_version: String,
+    pub assets: Vec<Asset>,
+    pub execution_strategy: String,
+}
 
 /// Wrapper of a `SignerMiddleware` client to send transactions to the given
 /// contract's `Address`.
