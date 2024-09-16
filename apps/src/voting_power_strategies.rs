@@ -11,4 +11,6 @@ where
 }
 
 mod balance_of;
+mod get_past_votes;
 pub use balance_of::BalanceOf;
+pub use get_past_votes::GetPastVotes;

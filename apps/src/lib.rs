@@ -39,7 +39,7 @@ where
         let mut voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>> =
             HashMap::new();
         voting_power_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
-        // voting_power_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
+        voting_power_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
 
         Self {
             voting_power_strategies,
