@@ -2,7 +2,7 @@ use crate::Asset;
 use alloy_primitives::{Address, U256};
 use risc0_steel::EvmEnv;
 
-pub trait ProtocolStrategy {
+pub trait VotingPowerStrategy {
     fn process(
         &self,
         env: &EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,

@@ -1,4 +1,4 @@
-use super::ProtocolStrategy;
+use super::VotingPowerStrategy;
 use crate::Asset;
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::sol;
@@ -13,7 +13,7 @@ sol! {
 }
 
 pub struct GetPastVotes;
-impl ProtocolStrategy for GetPastVotes {
+impl VotingPowerStrategy for GetPastVotes {
     fn process(
         &self,
         env: &EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,

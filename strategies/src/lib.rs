@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use voting_strategies::*;
 
 pub struct Context {
-    protocol_strategies: HashMap<String, Box<dyn ProtocolStrategy>>,
+    voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy>>,
     execution_strategies: HashMap<String, Box<dyn ProtocolExecutionStrategy>>,
     env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
 }
@@ -17,7 +17,7 @@ pub struct Context {
 impl Context {
     pub fn new(env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>) -> Self {
         Self {
-            protocol_strategies: HashMap::new(),
+            voting_power_strategies: HashMap::new(),
             execution_strategies: HashMap::new(),
             env,
         }
@@ -26,27 +26,28 @@ impl Context {
     pub fn default(
         env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
     ) -> Self {
-        let mut protocol_strategies: HashMap<String, Box<dyn ProtocolStrategy>> = HashMap::new();
-        protocol_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
-        protocol_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
+        let mut voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy>> =
+            HashMap::new();
+        voting_power_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
+        voting_power_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
 
         let mut execution_strategies: HashMap<String, Box<dyn ProtocolExecutionStrategy>> =
             HashMap::new();
         execution_strategies.insert("MajorityVoting".to_string(), Box::new(MajorityVoting));
 
         Self {
-            protocol_strategies,
+            voting_power_strategies,
             execution_strategies,
             env,
         }
     }
 
-    pub fn add_strategy(&mut self, name: String, protocol_strategy: Box<dyn ProtocolStrategy>) {
-        self.protocol_strategies.insert(name, protocol_strategy);
+    pub fn add_strategy(&mut self, name: String, protocol_strategy: Box<dyn VotingPowerStrategy>) {
+        self.voting_power_strategies.insert(name, protocol_strategy);
     }
 
     pub fn process_voting_strategy(&self, name: String, account: Address, asset: &Asset) -> U256 {
-        if let Some(protocol_strategy) = self.protocol_strategies.get(&name) {
+        if let Some(protocol_strategy) = self.voting_power_strategies.get(&name) {
             protocol_strategy.process(&self.env, account, asset)
         } else {
             panic!("Strategy not found: {}", name);
@@ -54,7 +55,7 @@ impl Context {
     }
 
     pub fn process_total_supply(&self, name: String, asset: &Asset) -> U256 {
-        if let Some(protocol_strategy) = self.protocol_strategies.get(&name) {
+        if let Some(protocol_strategy) = self.voting_power_strategies.get(&name) {
             protocol_strategy.get_supply(&self.env, asset)
         } else {
             panic!("Strategy not found: {}", name);
