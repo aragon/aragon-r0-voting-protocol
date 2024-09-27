@@ -73,6 +73,10 @@ struct Args {
     /// ERC20 contract address on Ethereum
     #[clap(long)]
     token: Address,
+
+    /// Additional delegation data
+    #[clap(long)]
+    additional_delegation_data: Vec<u8>,
 }
 
 fn to_hex_string(bytes: &[u8]) -> String {
@@ -105,15 +109,33 @@ fn main() -> Result<()> {
         serde_json::from_str::<apps::RiscVotingProtocolConfig>(&config_returns._0).unwrap();
     let mut strategies_context = HostContext::default(&mut env);
     // Get the total voting power of the voter across all assets.
-    let total_voting_power = config
+    let total_voting_power: U256 = config
         .assets
         .iter()
         .map(|asset| {
-            strategies_context.process_voting_power_strategy(
-                asset.voting_power_strategy.clone(),
+            // Get the accounts whost voting power is delegated to the voter.
+            let delegations = strategies_context.process_delegation_strategy(
+                asset.delegation_strategy.clone(),
                 args.voter,
                 asset,
-            )
+                args.additional_delegation_data.clone(),
+            );
+            if delegations.is_err() {
+                println!("Delegations given are not correct");
+                assert!(false);
+            }
+            delegations
+                .unwrap()
+                .iter()
+                .fold(U256::from(0), |acc, delegation| {
+                    strategies_context.process_voting_power_strategy(
+                        asset.voting_power_strategy.clone(),
+                        delegation.delegate,
+                        asset,
+                    ) + acc
+                })
+
+            // assert_eq!(asset.chain_id, destination_chain_id.chain_id());
         })
         .sum::<U256>();
 

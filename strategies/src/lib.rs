@@ -1,7 +1,10 @@
+pub mod delegation_strategies;
 pub mod execution_strategies;
 pub mod voting_strategies;
 
 use alloy_primitives::{Address, U256};
+use anyhow::{bail, Result};
+use delegation_strategies::*;
 use execution_strategies::*;
 use risc0_steel::{EvmEnv, SolCommitment};
 use serde::{Deserialize, Serialize};
@@ -10,6 +13,7 @@ use voting_strategies::*;
 
 pub struct Context {
     voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy>>,
+    delegation_strategies: HashMap<String, Box<dyn DelegationStrategy>>,
     execution_strategies: HashMap<String, Box<dyn ProtocolExecutionStrategy>>,
     env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
 }
@@ -18,6 +22,7 @@ impl Context {
     pub fn new(env: EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>) -> Self {
         Self {
             voting_power_strategies: HashMap::new(),
+            delegation_strategies: HashMap::new(),
             execution_strategies: HashMap::new(),
             env,
         }
@@ -31,12 +36,17 @@ impl Context {
         voting_power_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
         voting_power_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
 
+        let mut delegation_strategies: HashMap<String, Box<dyn DelegationStrategy>> =
+            HashMap::new();
+        delegation_strategies.insert("SplitDelegation".to_string(), Box::new(SplitDelegation));
+
         let mut execution_strategies: HashMap<String, Box<dyn ProtocolExecutionStrategy>> =
             HashMap::new();
         execution_strategies.insert("MajorityVoting".to_string(), Box::new(MajorityVoting));
 
         Self {
             voting_power_strategies,
+            delegation_strategies,
             execution_strategies,
             env,
         }
@@ -59,6 +69,20 @@ impl Context {
             protocol_strategy.get_supply(&self.env, asset)
         } else {
             panic!("Strategy not found: {}", name);
+        }
+    }
+
+    pub fn process_delegation_strategy(
+        &self,
+        name: String,
+        account: Address,
+        asset: &Asset,
+        additional_data: Vec<u8>,
+    ) -> Result<Vec<Delegation>> {
+        if let Some(delegation_strategy) = self.delegation_strategies.get(&name) {
+            delegation_strategy.process(&self.env, account, asset, additional_data)
+        } else {
+            bail!("Strategy not found: {}", name);
         }
     }
 

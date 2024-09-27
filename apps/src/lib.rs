@@ -15,8 +15,10 @@
 // The following library provides utility functions to help with sending
 // transactions to a deployed app contract on Ethereum.
 
+pub mod delegation_strategies;
 pub mod voting_power_strategies;
 use anyhow::Result;
+use delegation_strategies::*;
 use ethers::prelude::*;
 use risc0_steel::{host::db::ProofDb, EvmBlockHeader, EvmEnv};
 use serde::{Deserialize, Serialize};
@@ -27,6 +29,7 @@ pub(crate) type HostEvmEnv<P, H> = EvmEnv<ProofDb<P>, H>;
 
 pub struct HostContext<'a, P, H> {
     voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>>,
+    delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<P, H>>>,
     env: &'a mut HostEvmEnv<P, H>,
 }
 
@@ -41,8 +44,13 @@ where
         voting_power_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
         voting_power_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
 
+        let mut delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<P, H>>> =
+            HashMap::new();
+        delegation_strategies.insert("SplitDelegation".to_string(), Box::new(SplitDelegation));
+
         Self {
             voting_power_strategies,
+            delegation_strategies,
             env,
         }
     }
@@ -64,6 +72,20 @@ where
     ) -> alloy_primitives::U256 {
         if let Some(voting_power_strategy) = self.voting_power_strategies.get(&name) {
             voting_power_strategy.process(&mut self.env, account, asset)
+        } else {
+            panic!("Strategy not found: {}", name);
+        }
+    }
+
+    pub fn process_delegation_strategy(
+        &mut self,
+        name: String,
+        account: alloy_primitives::Address,
+        asset: &Asset,
+        additional_data: Vec<u8>,
+    ) -> Result<Vec<Delegation>> {
+        if let Some(delegation_strategy) = self.delegation_strategies.get(&name) {
+            delegation_strategy.process(&mut self.env, account, asset, additional_data)
         } else {
             panic!("Strategy not found: {}", name);
         }

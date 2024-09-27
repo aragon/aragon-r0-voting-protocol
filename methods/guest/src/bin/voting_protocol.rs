@@ -119,6 +119,7 @@ fn main() {
     let direction: u8 = env::read();
     let balance: U256 = env::read();
     let config_contract: Address = env::read();
+    let additional_delegation_data: Vec<u8> = env::read();
 
     let digest = hash_vote(
         ETH_SEPOLIA_CHAIN_SPEC.chain_id(),
@@ -151,15 +152,36 @@ fn main() {
     let strategies_context = strategies::Context::default(env);
 
     // Get the total voting power of the voter across all assets.
-    let total_voting_power = config
+    let total_voting_power: U256 = config
         .assets
         .iter()
         .map(|asset| {
-            strategies_context.process_voting_strategy(
-                asset.voting_power_strategy.clone(),
+            // Get the accounts whost voting power is delegated to the voter.
+            let delegations = strategies_context.process_delegation_strategy(
+                config
+                    .assets
+                    .iter()
+                    .map(|asset| asset.delegation_strategy.clone())
+                    .collect(),
                 voter,
                 asset,
-            )
+                additional_delegation_data.clone(),
+            );
+            if delegations.is_err() {
+                println!("Delegations given are not correct");
+                assert!(false);
+            }
+            delegations
+                .unwrap()
+                .iter()
+                .fold(U256::from(0), |acc, delegation| {
+                    strategies_context.process_voting_strategy(
+                        asset.voting_power_strategy.clone(),
+                        delegation.delegate,
+                        asset,
+                    ) + acc
+                })
+
             // assert_eq!(asset.chain_id, destination_chain_id.chain_id());
         })
         .sum::<U256>();
