@@ -21,7 +21,7 @@ where
 {
     fn process(&self, env: &mut HostEvmEnv<P, H>, account: Address, asset: &Asset) -> U256 {
         let block_number = env.block_commitment().blockNumber;
-        let mut asset_contract = Contract::preflight(asset.token, env);
+        let mut asset_contract = Contract::preflight(asset.contract, env);
         let balance_call = IERC20Votes::getPastVotesCall {
             account,
             blockNumber: block_number,

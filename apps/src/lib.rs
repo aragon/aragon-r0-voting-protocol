@@ -79,15 +79,17 @@ where
 
     pub fn process_delegation_strategy(
         &mut self,
-        name: String,
         account: alloy_primitives::Address,
         asset: &Asset,
         additional_data: Vec<u8>,
     ) -> Result<Vec<Delegation>> {
-        if let Some(delegation_strategy) = self.delegation_strategies.get(&name) {
+        if let Some(delegation_strategy) = self
+            .delegation_strategies
+            .get(asset.delegation.strategy.as_str())
+        {
             delegation_strategy.process(&mut self.env, account, asset, additional_data)
         } else {
-            panic!("Strategy not found: {}", name);
+            panic!("Strategy not found: {}", asset.delegation.strategy);
         }
     }
 }
@@ -95,19 +97,18 @@ where
 // The input of the config
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Restaking {
-    pub address: alloy_primitives::Address,
-    pub voting_power_strategy: String,
+pub struct DelegationObject {
+    pub contract: alloy_primitives::Address,
+    pub strategy: String,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Asset {
-    pub token: alloy_primitives::Address,
+    pub contract: alloy_primitives::Address,
     pub chain_id: u64,
     pub voting_power_strategy: String,
-    pub delegation_strategy: String,
-    pub restaking: Vec<Restaking>,
+    pub delegation: DelegationObject,
 }
 
 #[derive(Serialize, Deserialize)]

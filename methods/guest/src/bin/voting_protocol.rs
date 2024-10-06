@@ -158,11 +158,6 @@ fn main() {
         .map(|asset| {
             // Get the accounts whost voting power is delegated to the voter.
             let delegations = strategies_context.process_delegation_strategy(
-                config
-                    .assets
-                    .iter()
-                    .map(|asset| asset.delegation_strategy.clone())
-                    .collect(),
                 voter,
                 asset,
                 additional_delegation_data.clone(),

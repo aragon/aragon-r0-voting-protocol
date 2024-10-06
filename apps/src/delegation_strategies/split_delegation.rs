@@ -44,7 +44,7 @@ where
             .collect();
 
         // Confirm the delegations are valid and get each ratio
-        let mut delegations_contract = Contract::preflight(asset.token, env);
+        let mut delegations_contract = Contract::preflight(asset.delegation.contract, env);
 
         let account_delegates: Vec<Option<Delegation>> = delegations
             .iter()

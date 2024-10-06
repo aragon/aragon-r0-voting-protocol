@@ -21,7 +21,7 @@ impl VotingPowerStrategy for GetPastVotes {
         asset: &Asset,
     ) -> U256 {
         let block_number = env.block_commitment().blockNumber;
-        let asset_contract = Contract::new(asset.token, env);
+        let asset_contract = Contract::new(asset.contract, env);
         let balance_call = IERC20Votes::getPastVotesCall {
             account,
             blockNumber: block_number,
@@ -36,7 +36,7 @@ impl VotingPowerStrategy for GetPastVotes {
         asset: &Asset,
     ) -> U256 {
         let block_number = env.block_commitment().blockNumber;
-        let asset_contract = Contract::new(asset.token, env);
+        let asset_contract = Contract::new(asset.contract, env);
         let supply_call = IERC20Votes::getPastTotalSupplyCall {
             timepoint: block_number,
         };

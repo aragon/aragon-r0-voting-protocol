@@ -40,7 +40,7 @@ impl DelegationStrategy for SplitDelegation {
             .collect();
 
         // Confirm the delegations are valid and get each ratio
-        let delegations_contract = Contract::new(asset.token, env);
+        let delegations_contract = Contract::new(asset.delegation.contract, env);
         let account_delegates: Vec<Option<Delegation>> = delegations
             .iter()
             .map(|potential_delegate| {

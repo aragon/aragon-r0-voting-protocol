@@ -74,15 +74,17 @@ impl Context {
 
     pub fn process_delegation_strategy(
         &self,
-        name: String,
         account: Address,
         asset: &Asset,
         additional_data: Vec<u8>,
     ) -> Result<Vec<Delegation>> {
-        if let Some(delegation_strategy) = self.delegation_strategies.get(&name) {
+        if let Some(delegation_strategy) = self
+            .delegation_strategies
+            .get(asset.delegation.strategy.as_str())
+        {
             delegation_strategy.process(&self.env, account, asset, additional_data)
         } else {
-            bail!("Strategy not found: {}", name);
+            bail!("Strategy not found: {}", asset.delegation.strategy);
         }
     }
 
@@ -106,19 +108,18 @@ impl Context {
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Restaking {
-    pub address: Address,
-    pub voting_power_strategy: String,
+pub struct DelegationObject {
+    pub contract: Address,
+    pub strategy: String,
 }
 
 #[derive(Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Asset {
-    pub token: Address,
+    pub contract: Address,
     pub chain_id: u64,
     pub voting_power_strategy: String,
-    pub delegation_strategy: String,
-    pub restaking: Vec<Restaking>,
+    pub delegation: DelegationObject,
 }
 
 #[derive(Serialize, Deserialize)]
