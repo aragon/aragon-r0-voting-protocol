@@ -1,7 +1,9 @@
 #![allow(unused_doc_comments)]
 #![no_main]
 
-use alloy_primitives::{Address, U256};
+use std::str::FromStr;
+
+use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::{sol, SolValue};
 use hex::FromHex;
 use risc0_steel::{config::ETH_SEPOLIA_CHAIN_SPEC, ethereum::EthEvmInput, Contract, SolCommitment};
@@ -119,7 +121,7 @@ fn main() {
     let direction: u8 = env::read();
     let balance: U256 = env::read();
     let config_contract: Address = env::read();
-    let additional_delegation_data: Vec<u8> = env::read();
+    let additional_delegation_data: String = env::read();
 
     let digest = hash_vote(
         ETH_SEPOLIA_CHAIN_SPEC.chain_id(),
@@ -160,7 +162,7 @@ fn main() {
             let delegations = strategies_context.process_delegation_strategy(
                 voter,
                 asset,
-                additional_delegation_data.clone(),
+                Bytes::from_str(additional_delegation_data.as_str()).unwrap(),
             );
             if delegations.is_err() {
                 println!("Delegations given are not correct");
@@ -170,11 +172,12 @@ fn main() {
                 .unwrap()
                 .iter()
                 .fold(U256::from(0), |acc, delegation| {
-                    strategies_context.process_voting_strategy(
+                    (strategies_context.process_voting_strategy(
                         asset.voting_power_strategy.clone(),
                         delegation.delegate,
                         asset,
-                    ) + acc
+                    ) * delegation.ratio)
+                        + acc
                 })
 
             // assert_eq!(asset.chain_id, destination_chain_id.chain_id());

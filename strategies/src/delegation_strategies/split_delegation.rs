@@ -1,10 +1,12 @@
 use super::DelegationStrategy;
 use crate::Asset;
 use crate::Delegation;
+use alloy_primitives::Bytes;
+use alloy_primitives::U256;
 use alloy_primitives::{Address, Uint};
 use alloy_sol_types::sol;
 use anyhow::{bail, Result};
-use risc0_steel::EvmBlockHeader;
+// use risc0_steel::EvmBlockHeader;
 use risc0_steel::{Contract, EvmEnv};
 
 sol! {
@@ -25,9 +27,8 @@ impl DelegationStrategy for SplitDelegation {
         env: &EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
         account: Address,
         asset: &Asset,
-        additional_data: Vec<u8>,
+        additional_data: Bytes,
     ) -> Result<Vec<Delegation>> {
-        let context = "0x";
         // Ensure the length of the input bytes is a multiple of 20
         if additional_data.len() % 20 != 0 {
             bail!("Input byte vector is not a valid length for Address conversion");
@@ -40,6 +41,7 @@ impl DelegationStrategy for SplitDelegation {
             .collect();
 
         // Confirm the delegations are valid and get each ratio
+        let context = asset.contract;
         let delegations_contract = Contract::new(asset.delegation.contract, env);
         let account_delegates: Vec<Option<Delegation>> = delegations
             .iter()
@@ -52,22 +54,22 @@ impl DelegationStrategy for SplitDelegation {
                     .call_builder(&potential_delegate_delegations_call)
                     .call();
 
-                if potential_delegate_delegations.expirationTimestamp
-                    >= Uint::<256, 4>::from(env.header().timestamp())
-                {
-                    // Find the matching delegation for the account and return a Some(Delegation) if valid
-                    potential_delegate_delegations
-                        .delegations
-                        .iter()
-                        .find(|d| compare_bytes32_to_address(d.delegate, account))
-                        .map(|d| Delegation {
-                            delegate: *potential_delegate,
-                            ratio: d.ratio,
-                        })
-                } else {
-                    // Return None if the delegation has expired
-                    None
-                }
+                let total_ratios = potential_delegate_delegations
+                    .delegations
+                    .iter()
+                    .fold(U256::from(0), |acc, d| acc + d.ratio);
+
+                // if potential_delegate_delegations.expirationTimestamp >= Uint::<256, 4>::from(env.header().timestamp())
+
+                // Find the matching delegation for the account and return a Some(Delegation) if valid
+                potential_delegate_delegations
+                    .delegations
+                    .iter()
+                    .find(|d| compare_bytes32_to_address(d.delegate, account))
+                    .map(|d| Delegation {
+                        delegate: *potential_delegate,
+                        ratio: d.ratio / total_ratios,
+                    })
             })
             .collect();
 

@@ -17,6 +17,7 @@
 
 pub mod delegation_strategies;
 pub mod voting_power_strategies;
+use alloy_primitives::Bytes;
 use anyhow::Result;
 use delegation_strategies::*;
 use ethers::prelude::*;
@@ -81,7 +82,7 @@ where
         &mut self,
         account: alloy_primitives::Address,
         asset: &Asset,
-        additional_data: Vec<u8>,
+        additional_data: Bytes,
     ) -> Result<Vec<Delegation>> {
         if let Some(delegation_strategy) = self
             .delegation_strategies

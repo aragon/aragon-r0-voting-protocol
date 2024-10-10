@@ -1,4 +1,6 @@
-use alloy_primitives::{Address, U256};
+use std::str::FromStr;
+
+use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
 use apps::{HostContext, TxSender};
@@ -76,7 +78,7 @@ struct Args {
 
     /// Additional delegation data
     #[clap(long)]
-    additional_delegation_data: Vec<u8>,
+    additional_delegation_data: String,
 }
 
 fn to_hex_string(bytes: &[u8]) -> String {
@@ -117,7 +119,7 @@ fn main() -> Result<()> {
             let delegations = strategies_context.process_delegation_strategy(
                 args.voter,
                 asset,
-                args.additional_delegation_data.clone(),
+                Bytes::from_str(args.additional_delegation_data.as_str()).unwrap(),
             );
             if delegations.is_err() {
                 println!("Delegations given are not correct");
@@ -127,11 +129,12 @@ fn main() -> Result<()> {
                 .unwrap()
                 .iter()
                 .fold(U256::from(0), |acc, delegation| {
-                    strategies_context.process_voting_power_strategy(
+                    (strategies_context.process_voting_power_strategy(
                         asset.voting_power_strategy.clone(),
                         delegation.delegate,
                         asset,
-                    ) + acc
+                    ) * delegation.ratio)
+                        + acc
                 })
 
             // assert_eq!(asset.chain_id, destination_chain_id.chain_id());
@@ -169,6 +172,7 @@ fn main() -> Result<()> {
         .write(&args.direction)?
         .write(&args.balance)?
         .write(&args.config_contract)?
+        .write(&args.additional_delegation_data)?
         .build()?;
 
     let receipt = default_prover()

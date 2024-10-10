@@ -1,5 +1,5 @@
 use crate::Asset;
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use anyhow::Result;
 use risc0_steel::EvmEnv;
 use std::iter::FromIterator;
@@ -28,7 +28,7 @@ pub trait DelegationStrategy {
         env: &EvmEnv<risc0_steel::StateDb, risc0_steel::ethereum::EthBlockHeader>,
         account: Address,
         asset: &Asset,
-        additional_data: Vec<u8>,
+        additional_data: Bytes,
     ) -> Result<Vec<Delegation>>;
 }
 

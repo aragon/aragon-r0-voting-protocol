@@ -40,6 +40,10 @@ async fn root(Json(payload): Json<VotingParams>) -> (StatusCode, Json<VotingResp
     println!("Balance: {}", payload.balance);
     println!("Config Contract: {}", payload.config_contract);
     println!("Token Address: {}", payload.token_address);
+    println!(
+        "Additional Delegation Data: {:?}",
+        payload.additional_delegation_data
+    );
 
     let output = Command::new("./publisher")
         .current_dir("../target/release/")
@@ -66,6 +70,10 @@ async fn root(Json(payload): Json<VotingParams>) -> (StatusCode, Json<VotingResp
         .arg(format!("--balance={}", payload.balance))
         .arg(format!("--config-contract={}", payload.config_contract))
         .arg(format!("--token={}", payload.token_address))
+        .arg(format!(
+            "--additional-delegation-data={}",
+            payload.additional_delegation_data
+        ))
         .output()
         .expect("Failed to execute command");
 
@@ -103,6 +111,7 @@ struct VotingParams {
     balance: String,
     config_contract: String,
     token_address: String,
+    additional_delegation_data: String,
 }
 
 #[derive(Serialize)]

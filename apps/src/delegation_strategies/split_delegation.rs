@@ -1,7 +1,7 @@
 use super::DelegationStrategy;
 use crate::Delegation;
 use crate::{Asset, HostEvmEnv};
-use alloy_primitives::Address;
+use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::sol;
 use anyhow::{bail, Result};
 use risc0_steel::{host::provider::Provider, Contract, EvmBlockHeader};
@@ -29,9 +29,8 @@ where
         env: &mut HostEvmEnv<P, H>,
         account: Address,
         asset: &Asset,
-        additional_data: Vec<u8>,
+        additional_data: Bytes,
     ) -> Result<Vec<Delegation>> {
-        let context = "0x";
         // Ensure the length of the input bytes is a multiple of 20
         if additional_data.len() % 20 != 0 {
             bail!("Input byte vector is not a valid length for Address conversion");
@@ -42,10 +41,11 @@ where
             .chunks_exact(20) // Split the input bytes into chunks of 20
             .map(|chunk| Address::from_slice(chunk)) // Convert each chunk into an `Address`
             .collect();
+        println!("Input Delegations: {:?}", delegations);
 
         // Confirm the delegations are valid and get each ratio
+        let context = asset.contract;
         let mut delegations_contract = Contract::preflight(asset.delegation.contract, env);
-
         let account_delegates: Vec<Option<Delegation>> = delegations
             .iter()
             .map(|potential_delegate| {
@@ -57,15 +57,24 @@ where
                     .call_builder(&potential_delegate_delegations_call)
                     .call()
                     .unwrap();
+                println!(
+                    "Potential Delegate Delegations: {:?}",
+                    potential_delegate_delegations.delegations[0].delegate
+                );
 
                 // Find the matching delegation for the account and return a Some(Delegation) if valid
+                let total_ratios = potential_delegate_delegations
+                    .delegations
+                    .iter()
+                    .fold(U256::from(0), |acc, d| acc + d.ratio);
+
                 potential_delegate_delegations
                     .delegations
                     .iter()
                     .find(|d| compare_bytes32_to_address(d.delegate, account))
                     .map(|d| Delegation {
                         delegate: *potential_delegate,
-                        ratio: d.ratio,
+                        ratio: d.ratio / total_ratios,
                     })
             })
             .collect();

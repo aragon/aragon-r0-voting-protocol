@@ -1,5 +1,5 @@
 use crate::{Asset, HostEvmEnv};
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use anyhow::Result;
 use risc0_steel::host::provider::Provider;
 use std::iter::FromIterator;
@@ -32,7 +32,7 @@ where
         env: &mut HostEvmEnv<P, H>,
         account: Address,
         asset: &Asset,
-        additional_data: Vec<u8>,
+        additional_data: Bytes,
     ) -> Result<Vec<Delegation>>;
 }
 

@@ -2,7 +2,7 @@ pub mod delegation_strategies;
 pub mod execution_strategies;
 pub mod voting_strategies;
 
-use alloy_primitives::{Address, U256};
+use alloy_primitives::{Address, Bytes, U256};
 use anyhow::{bail, Result};
 use delegation_strategies::*;
 use execution_strategies::*;
@@ -76,7 +76,7 @@ impl Context {
         &self,
         account: Address,
         asset: &Asset,
-        additional_data: Vec<u8>,
+        additional_data: Bytes,
     ) -> Result<Vec<Delegation>> {
         if let Some(delegation_strategy) = self
             .delegation_strategies

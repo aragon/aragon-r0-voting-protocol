@@ -4,15 +4,16 @@ cargo build
 
 # These are some examples of live values that you can use to test the publisher
 export TOYKEN_ADDRESS=0x185Bb1cca668C474214e934028A3e4BB7A5E6525
-export PROVING_BLOCK_NUMBER=6670631
-export VOTER_SIGNATURE="67bb934b4167c8b71580651bb028e1e9ead9a63f4f9de10025cbfddd07def8b3283275cbe321898f0975cbb121e4557976bfb9791fe267e98b4ecc256091cd2a1c"
-export VOTER=0x983564F7c30Da047aC680764dE089D269fc3cbfb
+export PROVING_BLOCK_NUMBER=6845622
+export VOTER_SIGNATURE="6673ae515ae81a300269ba5bca6bb710500fc424707e0a0243658ad122cf85c9435e28ef9c52dc1431aa1efea4f8a253adeeead90bc08152d88d93b43085377b1c"
+export VOTER=0x8bF1e340055c7dE62F11229A149d3A1918de3d74
 #export VOTER=0x8bF1e340055c7dE62F11229A149d3A1918de3d74
-export COUNTER_ADDRESS=0xC83De2199637f11E6457b4979EB2986162b02F71
-export DAO_ADDRESS=0xc6906995e59e7CB65f2D9e91f5CcC88ca2D1c9db
-export PROPOSAL_ID=2
-export DIRECTION=1
-export BALANCE=100000000000000000
+export COUNTER_ADDRESS=0x0eb6FE665fFf15f99b34803eD53139A6c5488824
+export DAO_ADDRESS=0x727B0141EF57f1AD53B9a8f63adFFD739Ea11fDf
+export PROPOSAL_ID=1
+export DIRECTION=2
+export BALANCE=900000000000000000
+export ADDITIONAL_DELEGATION_DATA="8bF1e340055c7dE62F11229A149d3A1918de3d74"
 
 COUNTER_VALUE=$(cast call --rpc-url ${RPC_URL} ${COUNTER_ADDRESS:?} 'get()(uint256)')
 
@@ -43,7 +44,8 @@ cargo run --bin publisher -- \
     --direction=${DIRECTION} \
     --balance=${BALANCE} \
     --config-contract=${COUNTER_ADDRESS:?} \
-    --token=${TOYKEN_ADDRESS:?} 
+    --token=${TOYKEN_ADDRESS:?} \
+    --additional-delegation-data=${ADDITIONAL_DELEGATION_DATA:?}
 
 # Attempt to verify counter value as part of the script logic
 echo "All operations completed successfully."
