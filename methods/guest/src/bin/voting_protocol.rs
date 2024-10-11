@@ -176,7 +176,7 @@ fn main() {
                         asset.voting_power_strategy.clone(),
                         delegation.delegate,
                         asset,
-                    ) * delegation.ratio)
+                    ) / delegation.ratio)
                         + acc
                 })
 

@@ -58,8 +58,9 @@ where
                     .call()
                     .unwrap();
                 println!(
-                    "Potential Delegate Delegations: {:?}",
-                    potential_delegate_delegations.delegations[0].delegate
+                    "Potential Delegate Delegations: {:?}, {:?}",
+                    potential_delegate_delegations.delegations[0].delegate,
+                    potential_delegate_delegations.delegations[0].ratio
                 );
 
                 // Find the matching delegation for the account and return a Some(Delegation) if valid
@@ -67,6 +68,11 @@ where
                     .delegations
                     .iter()
                     .fold(U256::from(0), |acc, d| acc + d.ratio);
+                println!("Total Ratios: {:?}", total_ratios);
+                println!(
+                    "1st Delegate Ratio: {:?}",
+                    total_ratios / potential_delegate_delegations.delegations[0].ratio
+                );
 
                 potential_delegate_delegations
                     .delegations
@@ -74,7 +80,7 @@ where
                     .find(|d| compare_bytes32_to_address(d.delegate, account))
                     .map(|d| Delegation {
                         delegate: *potential_delegate,
-                        ratio: d.ratio / total_ratios,
+                        ratio: total_ratios / d.ratio,
                     })
             })
             .collect();

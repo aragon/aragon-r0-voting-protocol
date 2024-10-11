@@ -68,7 +68,7 @@ impl DelegationStrategy for SplitDelegation {
                     .find(|d| compare_bytes32_to_address(d.delegate, account))
                     .map(|d| Delegation {
                         delegate: *potential_delegate,
-                        ratio: d.ratio / total_ratios,
+                        ratio: total_ratios / d.ratio,
                     })
             })
             .collect();

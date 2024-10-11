@@ -15,9 +15,10 @@ impl FromIterator<(Address, U256)> for Delegation {
 
         // Take the first tuple from the iterator to create the struct
         if let Some((delegate, ratio)) = iter.next() {
+            println!("delegate: {}, ratio: {}", delegate, ratio);
             Delegation { delegate, ratio }
         } else {
-            panic!("Iterator is empty, cannot create MyStruct");
+            panic!("Iterator is empty, cannot create Delegation");
         }
     }
 }
