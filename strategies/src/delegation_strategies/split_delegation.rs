@@ -54,6 +54,13 @@ impl DelegationStrategy for SplitDelegation {
                     .call_builder(&potential_delegate_delegations_call)
                     .call();
 
+                if potential_delegate_delegations.delegations.is_empty() {
+                    return Some(Delegation {
+                        delegate: *potential_delegate,
+                        ratio: U256::from(1),
+                    });
+                }
+
                 let total_ratios = potential_delegate_delegations
                     .delegations
                     .iter()

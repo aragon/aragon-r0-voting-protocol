@@ -63,6 +63,13 @@ where
                     potential_delegate_delegations.delegations[0].ratio
                 );
 
+                if potential_delegate_delegations.delegations.is_empty() {
+                    return Some(Delegation {
+                        delegate: *potential_delegate,
+                        ratio: U256::from(1),
+                    });
+                }
+
                 // Find the matching delegation for the account and return a Some(Delegation) if valid
                 let total_ratios = potential_delegate_delegations
                     .delegations
