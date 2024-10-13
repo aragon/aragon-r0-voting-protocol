@@ -17,29 +17,34 @@
 
 pub mod delegation_strategies;
 pub mod voting_power_strategies;
+use alloy::providers::Provider;
 use alloy_primitives::Bytes;
 use anyhow::Result;
 use delegation_strategies::*;
-use ethers::prelude::*;
-use risc0_steel::{host::db::ProofDb, EvmBlockHeader, EvmEnv};
+use risc0_steel::{
+    ethereum::EthEvmEnv,
+    host::{db::ProofDb, HostCommit},
+    EvmBlockHeader,
+};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use voting_power_strategies::*;
 
-pub(crate) type HostEvmEnv<P, H> = EvmEnv<ProofDb<P>, H>;
+type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, HostCommit<C>>;
+/// Wrapper for the commit on the host.
 
 pub struct HostContext<'a, P, H> {
     voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>>,
     delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<P, H>>>,
-    env: &'a mut HostEvmEnv<P, H>,
+    env: &'a mut EthHostEvmEnv<P, H>,
 }
 
 impl<'a, P, H> HostContext<'a, P, H>
 where
-    P: risc0_steel::host::provider::Provider,
+    P: Provider + revm::primitives::db::Database,
     H: EvmBlockHeader,
 {
-    pub fn default(env: &'a mut HostEvmEnv<P, H>) -> Self {
+    pub fn default(env: &'a mut EthHostEvmEnv<P, H>) -> Self {
         let mut voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>> =
             HashMap::new();
         voting_power_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
@@ -118,45 +123,4 @@ pub struct RiscVotingProtocolConfig {
     pub voting_protocol_version: String,
     pub assets: Vec<Asset>,
     pub execution_strategy: String,
-}
-
-/// Wrapper of a `SignerMiddleware` client to send transactions to the given
-/// contract's `Address`.
-pub struct TxSender {
-    chain_id: u64,
-    client: SignerMiddleware<Provider<Http>, Wallet<k256::ecdsa::SigningKey>>,
-    contract: Address,
-}
-
-impl TxSender {
-    /// Creates a new `TxSender`.
-    pub fn new(chain_id: u64, rpc_url: &str, private_key: &str, contract: &str) -> Result<Self> {
-        let provider = Provider::<Http>::try_from(rpc_url)?;
-        let wallet: LocalWallet = private_key.parse::<LocalWallet>()?.with_chain_id(chain_id);
-        let client = SignerMiddleware::new(provider.clone(), wallet.clone());
-        let contract = contract.parse::<Address>()?;
-
-        Ok(TxSender {
-            chain_id,
-            client,
-            contract,
-        })
-    }
-
-    /// Send a transaction with the given calldata.
-    pub async fn send(&self, calldata: Vec<u8>) -> Result<Option<TransactionReceipt>> {
-        let tx = TransactionRequest::new()
-            .chain_id(self.chain_id)
-            .to(self.contract)
-            .from(self.client.address())
-            .data(calldata);
-
-        log::info!("Transaction request: {:?}", &tx);
-
-        let tx = self.client.send_transaction(tx, None).await?.await?;
-
-        log::info!("Transaction receipt: {:?}", &tx);
-
-        Ok(tx)
-    }
 }

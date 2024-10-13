@@ -1,7 +1,7 @@
-use crate::{Asset, HostEvmEnv};
+use crate::{Asset, EthHostEvmEnv};
+use alloy::providers::Provider;
 use alloy_primitives::{Address, Bytes, U256};
 use anyhow::Result;
-use risc0_steel::host::provider::Provider;
 use std::iter::FromIterator;
 
 pub struct Delegation {
@@ -25,12 +25,12 @@ impl FromIterator<(Address, U256)> for Delegation {
 
 pub trait DelegationStrategy<P, H>
 where
-    P: Provider,
+    P: Provider + revm::primitives::db::Database,
     H: risc0_steel::EvmBlockHeader,
 {
     fn process(
         &self,
-        env: &mut HostEvmEnv<P, H>,
+        env: &mut EthHostEvmEnv<P, H>,
         account: Address,
         asset: &Asset,
         additional_data: Bytes,

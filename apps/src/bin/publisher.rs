@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use alloy::{network::EthereumWallet, providers::ProviderBuilder, rpc::types::TransactionRequest};
 use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::{sol, SolCall};
 use anyhow::Result;
@@ -68,7 +69,7 @@ struct Args {
     #[clap(long)]
     balance: U256,
 
-    /// Counter's contract address on Ethereum
+    /// Plugin's contract address on Ethereum
     #[clap(long)]
     config_contract: Address,
 
@@ -142,24 +143,6 @@ fn main() -> Result<()> {
         .sum::<U256>();
 
     println!("Total voting power: {}", total_voting_power);
-    // Prepare the function call
-    /*
-        let call = IERC20::balanceOfCall {
-            account: args.voter,
-        };
-
-        // Preflight the call to execute the function in the guest.
-        let mut contract = Contract::preflight(args.token, &mut env);
-        let returns = contract.call_builder(&call).call()?;
-        println!(
-            "For block {} calling `{}` on {} returns: {}",
-            env.header().number(),
-            IERC20::balanceOfCall::SIGNATURE,
-            args.token,
-            returns._0
-        );
-    */
-
     println!("proving...");
 
     let view_call_input = env.into_input()?;
@@ -185,13 +168,12 @@ fn main() -> Result<()> {
         .receipt;
     println!("proving...done");
 
-    // Create a new `TxSender`.
-    let tx_sender = TxSender::new(
-        args.chain_id,
-        &args.rpc_url,
-        &args.eth_wallet_private_key,
-        &args.config_contract.to_string(),
-    )?;
+    // Create an alloy provider for that private key and URL.
+    let wallet = EthereumWallet::from(args.eth_wallet_private_key);
+    let provider = ProviderBuilder::new()
+        .with_recommended_fillers()
+        .wallet(wallet)
+        .on_http(args.rpc_url);
 
     // Encode the groth16 seal with the selector
     let seal = encode(receipt.inner.groth16()?.seal.clone())?;
@@ -205,14 +187,14 @@ fn main() -> Result<()> {
     let calldata = IMajorityVoting::voteCall {
         journalData: receipt.journal.bytes.into(),
         seal: seal.into(),
-    }
-    .abi_encode();
+    };
 
     // Send the calldata to Ethereum.
     println!("sending tx...");
+    let tx = TransactionRequest::default()
+        .with_to(&args.config_contract)
+        .with_call(&calldata);
 
-    let runtime = tokio::runtime::Runtime::new()?;
-    runtime.block_on(tx_sender.send(calldata))?;
     println!("sending tx...done");
 
     Ok(())
