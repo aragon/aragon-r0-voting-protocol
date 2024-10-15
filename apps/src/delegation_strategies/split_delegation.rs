@@ -1,7 +1,7 @@
 use super::DelegationStrategy;
 use crate::Delegation;
 use crate::{Asset, EthHostEvmEnv};
-use alloy::providers::Provider;
+use alloy::{network::Network, providers::Provider, transports::Transport};
 use alloy_primitives::{Address, Bytes, U256};
 use alloy_sol_types::sol;
 use anyhow::{bail, Result};
@@ -20,14 +20,16 @@ sol! {
 
 pub struct SplitDelegation;
 
-impl<P, H> DelegationStrategy<P, H> for SplitDelegation
+impl<T, N, P, H> DelegationStrategy<T, N, P, H> for SplitDelegation
 where
-    P: Provider + revm::Database,
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
     H: EvmBlockHeader,
 {
     fn process(
         &self,
-        env: &mut EthHostEvmEnv<P, H>,
+        env: &mut EthHostEvmEnv<T, N, P, H>,
         account: Address,
         asset: &Asset,
         additional_data: Bytes,

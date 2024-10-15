@@ -1,13 +1,16 @@
 use crate::{Asset, EthHostEvmEnv};
-use alloy::providers::Provider;
+use alloy::{network::Network, providers::Provider, transports::Transport};
 use alloy_primitives::{Address, U256};
 
-pub trait VotingPowerStrategy<P, H>
+pub trait VotingPowerStrategy<T, N, P, H>
 where
-    P: Provider,
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
     H: risc0_steel::EvmBlockHeader,
 {
-    fn process(&self, env: &mut EthHostEvmEnv<P, H>, account: Address, asset: &Asset) -> U256;
+    fn process(&self, env: &mut EthHostEvmEnv<T, N, P, H>, account: Address, asset: &Asset)
+        -> U256;
 }
 
 mod balance_of;

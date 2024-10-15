@@ -1,6 +1,6 @@
 use super::VotingPowerStrategy;
 use crate::{Asset, EthHostEvmEnv};
-use alloy::providers::Provider;
+use alloy::{network::Network, providers::Provider, transports::Transport};
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::sol;
 use risc0_steel::{Contract, EvmBlockHeader};
@@ -15,12 +15,19 @@ sol! {
 
 pub struct BalanceOf;
 
-impl<P, H> VotingPowerStrategy<P, H> for BalanceOf
+impl<T, N, P, H> VotingPowerStrategy<T, N, P, H> for BalanceOf
 where
-    P: Provider + revm::primitives::db::Database,
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
     H: EvmBlockHeader,
 {
-    fn process(&self, env: &mut EthHostEvmEnv<P, H>, account: Address, asset: &Asset) -> U256 {
+    fn process(
+        &self,
+        env: &mut EthHostEvmEnv<T, N, P, H>,
+        account: Address,
+        asset: &Asset,
+    ) -> U256 {
         let mut asset_contract = Contract::preflight(asset.contract, env);
         let balance_call = IERC20::balanceOfCall { account };
         let balance = asset_contract.call_builder(&balance_call).call().unwrap();

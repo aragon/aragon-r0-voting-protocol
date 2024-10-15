@@ -17,40 +17,51 @@
 
 pub mod delegation_strategies;
 pub mod voting_power_strategies;
-use alloy::providers::Provider;
+use alloy::{network::Network, providers::Provider, transports::Transport};
 use alloy_primitives::Bytes;
 use anyhow::Result;
 use delegation_strategies::*;
 use risc0_steel::{
     ethereum::EthEvmEnv,
-    host::{db::ProofDb, HostCommit},
+    host::{
+        db::{AlloyDb, ProofDb},
+        HostCommit,
+    },
     EvmBlockHeader,
 };
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use voting_power_strategies::*;
 
-type EthHostEvmEnv<D, C> = EthEvmEnv<ProofDb<D>, HostCommit<C>>;
+type EthHostEvmEnv<T, N, P, C> = EthEvmEnv<ProofDb<AlloyDb<T, N, P>>, HostCommit<C>>;
 /// Wrapper for the commit on the host.
 
-pub struct HostContext<'a, P, H> {
-    voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>>,
-    delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<P, H>>>,
-    env: &'a mut EthHostEvmEnv<P, H>,
-}
-
-impl<'a, P, H> HostContext<'a, P, H>
+pub struct HostContext<'a, T, N, P, H>
 where
-    P: Provider + revm::primitives::db::Database,
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
     H: EvmBlockHeader,
 {
-    pub fn default(env: &'a mut EthHostEvmEnv<P, H>) -> Self {
-        let mut voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<P, H>>> =
+    voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<T, N, P, H>>>,
+    delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<T, N, P, H>>>,
+    env: &'a mut EthHostEvmEnv<T, N, P, H>,
+}
+
+impl<'a, T, N, P, H> HostContext<'a, T, N, P, H>
+where
+    T: Transport + Clone,
+    N: Network,
+    P: Provider<T, N>,
+    H: EvmBlockHeader,
+{
+    pub fn default(env: &'a mut EthHostEvmEnv<T, N, P, H>) -> Self {
+        let mut voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<T, N, P, H>>> =
             HashMap::new();
         voting_power_strategies.insert("BalanceOf".to_string(), Box::new(BalanceOf));
         voting_power_strategies.insert("GetPastVotes".to_string(), Box::new(GetPastVotes));
 
-        let mut delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<P, H>>> =
+        let mut delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<T, N, P, H>>> =
             HashMap::new();
         delegation_strategies.insert("SplitDelegation".to_string(), Box::new(SplitDelegation));
 
@@ -59,15 +70,6 @@ where
             delegation_strategies,
             env,
         }
-    }
-
-    pub fn add_strategy(
-        &mut self,
-        name: String,
-        voting_power_strategy: Box<dyn VotingPowerStrategy<P, H>>,
-    ) {
-        self.voting_power_strategies
-            .insert(name, voting_power_strategy);
     }
 
     pub fn process_voting_power_strategy(
