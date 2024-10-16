@@ -3,6 +3,7 @@ use crate::{Asset, EthHostEvmEnv};
 use alloy::{network::Network, providers::Provider, transports::Transport};
 use alloy_primitives::{Address, U256};
 use alloy_sol_types::sol;
+use async_trait::async_trait;
 use risc0_steel::{Contract, EvmBlockHeader};
 
 sol! {
@@ -15,15 +16,16 @@ sol! {
 
 pub struct GetPastVotes;
 
+#[async_trait]
 impl<T, N, P, H> VotingPowerStrategy<T, N, P, H> for GetPastVotes
 where
     T: Transport + Clone,
     N: Network,
     // P: Provider + revm::primitives::db::Database,
-    P: Provider<T, N>,
-    H: EvmBlockHeader,
+    P: Provider<T, N> + Send + 'static,
+    H: EvmBlockHeader + Send + 'static,
 {
-    fn process(
+    async fn process(
         &self,
         env: &mut EthHostEvmEnv<T, N, P, H>,
         account: Address,
@@ -35,7 +37,11 @@ where
             account,
             blockNumber: U256::from(block_number),
         };
-        let balance = asset_contract.call_builder(&balance_call).call().unwrap();
+        let balance = asset_contract
+            .call_builder(&balance_call)
+            .call()
+            .await
+            .unwrap();
         U256::from(balance._0)
     }
 }

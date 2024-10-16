@@ -40,8 +40,8 @@ pub struct HostContext<'a, T, N, P, H>
 where
     T: Transport + Clone,
     N: Network,
-    P: Provider<T, N>,
-    H: EvmBlockHeader,
+    P: Provider<T, N> + Send + 'static,
+    H: EvmBlockHeader + Clone + Send + 'static,
 {
     voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<T, N, P, H>>>,
     delegation_strategies: HashMap<String, Box<dyn DelegationStrategy<T, N, P, H>>>,
@@ -51,9 +51,10 @@ where
 impl<'a, T, N, P, H> HostContext<'a, T, N, P, H>
 where
     T: Transport + Clone,
-    N: Network,
-    P: Provider<T, N>,
-    H: EvmBlockHeader,
+    T: Transport + Clone + Send + Sync,
+    N: Network + Send + Sync,
+    P: Provider<T, N> + Send + Sync + 'static,
+    H: EvmBlockHeader + Clone + Send + Sync + 'static,
 {
     pub fn default(env: &'a mut EthHostEvmEnv<T, N, P, H>) -> Self {
         let mut voting_power_strategies: HashMap<String, Box<dyn VotingPowerStrategy<T, N, P, H>>> =
@@ -72,20 +73,22 @@ where
         }
     }
 
-    pub fn process_voting_power_strategy(
+    pub async fn process_voting_power_strategy(
         &mut self,
         name: String,
         account: alloy_primitives::Address,
         asset: &Asset,
     ) -> alloy_primitives::U256 {
         if let Some(voting_power_strategy) = self.voting_power_strategies.get(&name) {
-            voting_power_strategy.process(&mut self.env, account, asset)
+            voting_power_strategy
+                .process(&mut self.env, account, asset)
+                .await
         } else {
             panic!("Strategy not found: {}", name);
         }
     }
 
-    pub fn process_delegation_strategy(
+    pub async fn process_delegation_strategy(
         &mut self,
         account: alloy_primitives::Address,
         asset: &Asset,
@@ -95,7 +98,9 @@ where
             .delegation_strategies
             .get(asset.delegation.strategy.as_str())
         {
-            delegation_strategy.process(&mut self.env, account, asset, additional_data)
+            delegation_strategy
+                .process(&mut self.env, account, asset, additional_data)
+                .await
         } else {
             panic!("Strategy not found: {}", asset.delegation.strategy);
         }

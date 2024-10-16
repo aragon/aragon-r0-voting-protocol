@@ -2,6 +2,7 @@ use crate::{Asset, EthHostEvmEnv};
 use alloy::{network::Network, providers::Provider, transports::Transport};
 use alloy_primitives::{Address, Bytes, U256};
 use anyhow::Result;
+use async_trait::async_trait;
 use risc0_steel::EvmBlockHeader;
 use std::iter::FromIterator;
 
@@ -24,14 +25,15 @@ impl FromIterator<(Address, U256)> for Delegation {
     }
 }
 
+#[async_trait]
 pub trait DelegationStrategy<T, N, P, H>
 where
-    T: Transport + Clone,
-    N: Network,
-    P: Provider<T, N>,
-    H: EvmBlockHeader,
+    T: Transport + Clone + Send + Sync,
+    N: Network + Send + Sync,
+    P: Provider<T, N> + Send + Sync + 'static,
+    H: EvmBlockHeader + Clone + Send + Sync + 'static,
 {
-    fn process(
+    async fn process(
         &self,
         env: &mut EthHostEvmEnv<T, N, P, H>,
         account: Address,
